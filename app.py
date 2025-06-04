@@ -296,12 +296,11 @@ def execute_script():
             log_entries.append({'type': 'info', 'message': f'{cmd_name}: {status}'})
             try:
                 resp_json = resp.json()
-            except:
+            except ValueError:
                 resp_json = {'raw': resp.text}
             results.append({'command': cmd_name, 'response': resp_json})
-            if cmd['extract_rule']:
-                data_json = resp.json()
-                extracted = jmespath.search(cmd['extract_rule'], data_json)
+            if cmd['extract_rule'] and isinstance(resp_json, (dict, list)):
+                extracted = jmespath.search(cmd['extract_rule'], resp_json)
                 if extracted is not None:
                     var_name = cmd['extract_rule'].split('.')[-1]
                     stack_vars[var_name] = str(extracted)
