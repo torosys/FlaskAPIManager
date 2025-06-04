@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Manager</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans">
+    {% block navbar %}
+    <nav class="bg-blue-700 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between">
+            <div class="text-lg font-semibold">API Manager</div>
+            <div>
+                {% if session.username %}
+                    <span class="mr-4">Logged in as {{ session.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="underline hover:text-gray-200">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
+    <div class="container mx-auto p-4">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{# envs_list.html – only the list-of-environments portion #}
+<div id="envs-list" class="bg-white p-4 rounded shadow space-y-2">
+  {% for env in envs %}
+    <div class="flex justify-between border-b pb-2 items-center flex-wrap">
+      <div>
+        <span class="font-semibold">{{ env['name'] }}</span>
+        <span class="text-sm text-gray-600">
+          {{ env['base_url'] }}{% if env['port'] %}:{{ env['port'] }}{% endif %}
+        </span>
+        {% if env['is_default'] %}
+          <span class="ml-2 text-green-600 font-semibold">(Default)</span>
+        {% endif %}
+      </div>
+      <div class="flex items-center space-x-2 mt-2 md:mt-0">
+        <label class="inline-flex items-center">
+          <input
+            type="checkbox"
+            name="is_default"
+            {% if env['is_default'] %}checked{% endif %}
+            hx-post="/toggle_default/{{ env['id'] }}"
+            hx-swap="none"
+            class="mr-2"
+          >
+          <span>Default</span>
+        </label>
+        <button
+          hx-get="/envs?list_only=1&edit_id={{ env['id'] }}"
+          hx-target="#envs-list"
+          hx-swap="outerHTML"
+          class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-400"
+        >
+          Edit
+        </button>
+        <button
+          hx-post="/delete_env/{{ env['id'] }}"
+          hx-get="/envs?list_only=1"
+          hx-target="#envs-list"
+          hx-swap="outerHTML"
+          class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  {% endfor %}
+</div>

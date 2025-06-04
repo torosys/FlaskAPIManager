@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <h3 class="text-lg font-semibold mb-4">Edit Command: {{ cmd['name'] }}</h3>
+  <form hx-post="/commands" hx-target="#commands-list" hx-swap="outerHTML" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
+    <input type="hidden" name="cmd_id" value="{{ cmd['id'] }}">
+    <div class="flex space-x-2 items-center">
+      <input type="text" name="name" value="{{ cmd['name'] }}" class="flex-1 border rounded px-2 py-1" required>
+      <select name="http_method" class="border rounded px-2 py-1">
+        {% for method in ['GET','POST','PUT','PATCH','DELETE'] %}
+          <option {{ 'selected' if cmd['http_method'] == method else '' }}>{{ method }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="endpoint" value="{{ cmd['endpoint'] }}" class="flex-1 border rounded px-2 py-1" required>
+    </div>
+    <!-- Existing Headers -->
+    <div id="headers-container" data-initial-hdr-count="{{ headers|length }}" class="space-y-2">
+      <label class="font-medium">Headers</label>
+      {% for h in headers %}
+        <div class="flex space-x-2" id="hdr-{{ loop.index0 }}">
+          <input type="text" name="header_key" value="{{ h['key'] }}" class="flex-1 border rounded px-2 py-1">
+          <input type="text" name="header_val" value="{{ h['value'] }}" class="flex-1 border rounded px-2 py-1">
+          <button type="button" onclick="document.getElementById('hdr-{{ loop.index0 }}').remove();" class="text-red-500 hover:text-red-700">✕</button>
+        </div>
+      {% endfor %}
+      <!-- One empty for new -->
+      <div class="flex space-x-2" id="hdr-{{ headers|length }}">
+        <input type="text" name="header_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
+        <input type="text" name="header_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
+        <button type="button" onclick="document.getElementById('hdr-{{ headers|length }}').remove();" class="text-red-500 hover:text-red-700">✕</button>
+      </div>
+    </div>
+    <button type="button" id="add-header" class="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">+ Add Header</button>
+    <!-- Existing Params -->
+    <div id="params-container" data-initial-prm-count="{{ params|length }}" class="space-y-2 mt-3">
+      <label class="font-medium">Query Parameters</label>
+      {% for p in params %}
+        <div class="flex space-x-2" id="prm-{{ loop.index0 }}">
+          <input type="text" name="param_key" value="{{ p['key'] }}" class="flex-1 border rounded px-2 py-1">
+          <input type="text" name="param_val" value="{{ p['value'] }}" class="flex-1 border rounded px-2 py-1">
+          <button type="button" onclick="document.getElementById('prm-{{ loop.index0 }}').remove();" class="text-red-500 hover:text-red-700">✕</button>
+        </div>
+      {% endfor %}
+      <!-- One empty for new -->
+      <div class="flex space-x-2" id="prm-{{ params|length }}">
+        <input type="text" name="param_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
+        <input type="text" name="param_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
+        <button type="button" onclick="document.getElementById('prm-{{ params|length }}').remove();" class="text-red-500 hover:text-red-700">✕</button>
+      </div>
+    </div>
+    <button type="button" id="add-param" class="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">+ Add Parameter</button>
+    <div class="mt-3 space-y-2">
+      <label class="block font-medium">Auth Type</label>
+      <input type="text" name="auth_type" value="{{ cmd['auth_type'] }}" class="w-full border rounded px-2 py-1">
+    </div>
+    <div class="space-y-2">
+      <label class="block font-medium">Body Template</label>
+      <textarea name="body_template" rows="3" class="w-full border rounded px-2 py-1">{{ cmd['body_template'] }}</textarea>
+    </div>
+    <div class="space-y-2">
+      <label class="block font-medium">Extract Rule (JMESPath)</label>
+      <input type="text" name="extract_rule" value="{{ cmd['extract_rule'] }}" class="w-full border rounded px-2 py-1">
+    </div>
+    <div class="space-y-2">
+      <label class="block font-medium">Notes</label>
+      <input type="text" name="notes" value="{{ cmd['notes'] }}" class="w-full border rounded px-2 py-1">
+    </div>
+    <div class="flex space-x-2 mt-3">
+      <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600">Update Command</button>
+      <button type="button" id="reset-form-edit" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- JavaScript for dynamic header/param fields -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const hdrContainer = document.getElementById('headers-container');
+    let hdrCount = parseInt(hdrContainer.dataset.initialHdrCount);
+    document.getElementById('add-header').addEventListener('click', function() {
+      const div = document.createElement('div');
+      div.className = 'flex space-x-2';
+      div.id = `hdr-${hdrCount}`;
+      div.innerHTML = `
+        <input type="text" name="header_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
+        <input type="text" name="header_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
+        <button type="button" onclick="document.getElementById('hdr-${hdrCount}').remove();" class="text-red-500 hover:text-red-700">✕</button>
+      `;
+      hdrContainer.appendChild(div);
+      hdrCount++;
+    });
+
+    const prmContainer = document.getElementById('params-container');
+    let prmCount = parseInt(prmContainer.dataset.initialPrmCount);
+    document.getElementById('add-param').addEventListener('click', function() {
+      const div = document.createElement('div');
+      div.className = 'flex space-x-2';
+      div.id = `prm-${prmCount}`;
+      div.innerHTML = `
+        <input type="text" name="param_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
+        <input type="text" name="param_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
+        <button type="button" onclick="document.getElementById('prm-${prmCount}').remove();" class="text-red-500 hover:text-red-700">✕</button>
+      `;
+      prmContainer.appendChild(div);
+      prmCount++;
+    });
+    document.getElementById('reset-form-edit').addEventListener('click', function() {
+      window.location.href = '/commands';
+    });
+  });
+</script>

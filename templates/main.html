@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <!-- Left Pane: Add Environment Form + Environment List + Global Params -->
+  <div class="col-span-1 flex flex-col space-y-4 overflow-auto">
+    <!-- Authentication Toggle -->
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-lg font-semibold">Environments</h3>
+      <button
+        id="auth-btn"
+        hx-post="/auth_toggle"
+        hx-include="[name=auth_url]"
+        hx-trigger="click"
+        hx-swap="none"
+        class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-500"
+      >
+        Authenticate
+      </button>
+    </div>
+    <input type="hidden" name="auth_url" value="https://example.com/login">
+
+    <!-- Add Environment Form (static) -->
+    <form
+      hx-post="/envs"
+      hx-target="#envs-list"
+      hx-swap="outerHTML"
+      class="bg-white p-4 rounded shadow space-y-3"
+    >
+      <input type="hidden" name="env_id" id="env_id">
+      <div class="flex space-x-2 items-center flex-wrap">
+        <input
+          type="text"
+          name="name"
+          id="env_name"
+          placeholder="Name"
+          class="min-w-0 flex-1 border rounded px-2 py-1"
+          required
+        >
+        <input
+          type="text"
+          name="base_url"
+          id="env_base_url"
+          placeholder="Base URL"
+          class="min-w-0 flex-1 border rounded px-2 py-1"
+          required
+        >
+        <input
+          type="number"
+          name="port"
+          id="env_port"
+          placeholder="Port"
+          class="w-20 border rounded px-2 py-1"
+        >
+      </div>
+      <div class="flex space-x-2 mt-2">
+        <button
+          type="submit"
+          class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Save Environment
+        </button>
+        <button
+          type="button"
+          id="reset-env-form"
+          class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+
+    <!-- HTMX placeholder for Environment List -->
+    <div
+      hx-get="/envs?list_only=1"
+      hx-trigger="load"
+      hx-target="#envs-list"
+      hx-swap="outerHTML"
+    ></div>
+    <div id="envs-list"></div>
+
+    <!-- Global Scope Parameters -->
+    <div class="bg-white p-4 rounded shadow">
+      <h4 class="font-medium mb-2">Global Parameters</h4>
+      <form
+        hx-post="/save_globals"
+        hx-swap="none"
+        class="space-y-2"
+        id="global-form"
+      >
+        <div
+          id="global-params-fields"
+          data-initial-gp-count="{{ global_params.initial | length }}"
+          class="space-y-2"
+        >
+          {% set idx = 0 %}
+          {% for key, val in global_params.initial.items() %}
+            <div
+              class="flex space-x-2 flex-wrap"
+              id="gp-field-{{ idx }}"
+            >
+              <input
+                type="text"
+                name="gk_{{ idx }}"
+                value="{{ key }}"
+                placeholder="Key"
+                class="min-w-0 flex-1 border rounded px-2 py-1"
+              >
+              <input
+                type="text"
+                name="gv_{{ idx }}"
+                value="{{ val }}"
+                placeholder="Value"
+                class="min-w-0 flex-1 border rounded px-2 py-1"
+              >
+              <button
+                type="button"
+                onclick="document.getElementById('gp-field-{{ idx }}').remove();"
+                class="text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
+            </div>
+            {% set idx = idx + 1 %}
+          {% endfor %}
+          <!-- Empty field for new key/value -->
+          <div
+            class="flex space-x-2 flex-wrap"
+            id="gp-field-{{ idx }}"
+          >
+            <input
+              type="text"
+              name="gk_{{ idx }}"
+              placeholder="Key"
+              class="min-w-0 flex-1 border rounded px-2 py-1"
+            >
+            <input
+              type="text"
+              name="gv_{{ idx }}"
+              placeholder="Value"
+              class="min-w-0 flex-1 border rounded px-2 py-1"
+            >
+            <button
+              type="button"
+              onclick="document.getElementById('gp-field-{{ idx }}').remove();"
+              class="text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <button
+          type="button"
+          id="add-gparam"
+          class="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+        >
+          + Add Parameter
+        </button>
+        <button
+          type="submit"
+          class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600 ml-2"
+        >
+          Save
+        </button>
+      </form>
+    </div>
+
+    <!-- JavaScript for Global Params dynamic fields -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const gpFields = document.getElementById('global-params-fields');
+        let gpCount = parseInt(gpFields.dataset.initialGpCount) + 1;
+
+        document.querySelector('#add-gparam').addEventListener('click', function() {
+          const div = document.createElement('div');
+          div.className = 'flex space-x-2 flex-wrap';
+          div.id = `gp-field-${gpCount}`;
+          div.innerHTML = `
+            <input
+              type="text"
+              name="gk_${gpCount}"
+              placeholder="Key"
+              class="min-w-0 flex-1 border rounded px-2 py-1"
+            >
+            <input
+              type="text"
+              name="gv_${gpCount}"
+              placeholder="Value"
+              class="min-w-0 flex-1 border rounded px-2 py-1"
+            >
+            <button
+              type="button"
+              onclick="document.getElementById('gp-field-${gpCount}').remove();"
+              class="text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          `;
+          gpFields.appendChild(div);
+          gpCount++;
+        });
+
+        document.getElementById('reset-env-form').addEventListener('click', function() {
+          window.location.href = '/envs';
+        });
+      });
+    </script>
+  </div>
+
+  <!-- Center Pane: Command Config Form -->
+  <div class="col-span-1 md:col-span-1">
+    <div class="bg-white p-4 rounded shadow mb-4">
+      <h3 class="text-lg font-semibold mb-2">Configure Command</h3>
+      <div hx-get="/commands?form_only=1" hx-trigger="load" hx-target="#main-command-form" hx-swap="outerHTML"></div>
+      <div id="main-command-form"></div>
+    </div>
+  </div>
+
+  <!-- Right Pane: Live Log -->
+  <div class="col-span-1 flex flex-col space-y-4 overflow-auto">
+    <div class="bg-white p-4 rounded shadow flex-1 overflow-auto">
+      <h3 class="font-semibold mb-2">Live Log</h3>
+      <div id="log-section" class="h-full overflow-auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Pane: Script Editor and API Responses spanning full width -->
+<div class="mt-4 space-y-4">
+  <div class="bg-white p-4 rounded shadow">
+    <h3 class="font-semibold mb-2">Script Editor</h3>
+    <textarea id="script" name="script" class="border w-full h-32 p-2 mb-4" placeholder="Enter commands, one per line..."></textarea>
+    <button id="run-btn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500" hx-post="/execute" hx-include="#script" hx-target="#log-section" hx-swap="innerHTML">Run</button>
+  </div>
+  <div class="bg-white p-4 rounded shadow">
+    <h3 class="text-lg font-semibold mb-2">API Responses</h3>
+    <input type="text" id="search-input" placeholder="Search in responses..." class="w-full border rounded px-2 py-1 mb-3">
+    <div id="results-container" class="space-y-4"></div>
+  </div>
+</div>
+
+<!-- HTMX & JS for loading results -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    fetchResults();
+  });
+  function fetchResults() {
+    fetch('/results')
+      .then(res => res.json())
+      .then(data => renderResults(data));
+  }
+  function renderResults(data) {
+    const container = document.getElementById('results-container');
+    container.innerHTML = '';
+    data.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'border p-2 rounded';
+      div.innerHTML = `<h4 class='font-medium'>${item.command}:</h4><pre class='bg-gray-100 p-2 rounded'>${JSON.stringify(item.response, null, 2)}</pre>`;
+      container.appendChild(div);
+    });
+  }
+  document.getElementById('search-input').addEventListener('input', function() {
+    const term = this.value.toLowerCase();
+    document.querySelectorAll('#results-container div').forEach(div => {
+      div.style.display = div.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}

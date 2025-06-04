@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Authentication Toggle -->
+  <div class="flex items-center justify-between mb-2">
+    <h3 class="text-lg font-semibold">Environments</h3>
+    <button
+      id="auth-btn"
+      hx-post="/auth_toggle"
+      hx-include="[name=auth_url]"
+      hx-trigger="click"
+      hx-swap="none"
+      class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-500"
+    >
+      Authenticate
+    </button>
+  </div>
+  <input type="hidden" name="auth_url" value="https://example.com/login">
+
+  <!-- Add Environment Form -->
+  <form
+    hx-post="/envs"
+    hx-target="#envs-list"
+    hx-swap="outerHTML"
+    class="bg-white p-4 rounded shadow space-y-3"
+  >
+    <input type="hidden" name="env_id" id="env_id">
+    <div class="flex space-x-2 items-center flex-wrap">
+      <input
+        type="text"
+        name="name"
+        id="env_name"
+        placeholder="Name"
+        class="min-w-0 flex-1 border rounded px-2 py-1"
+        required
+      >
+      <input
+        type="text"
+        name="base_url"
+        id="env_base_url"
+        placeholder="Base URL"
+        class="min-w-0 flex-1 border rounded px-2 py-1"
+        required
+      >
+      <input
+        type="number"
+        name="port"
+        id="env_port"
+        placeholder="Port"
+        class="w-20 border rounded px-2 py-1"
+      >
+    </div>
+    <div class="flex space-x-2 mt-2">
+      <button
+        type="submit"
+        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Save Environment
+      </button>
+      <button
+        type="button"
+        id="reset-env-form"
+        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+
+  <!-- Existing Environments List (loaded via HTMX) -->
+  <div hx-get="/envs?list_only=1" hx-trigger="load" hx-target="#envs-list" hx-swap="outerHTML"></div>
+  <div id="envs-list"></div>
+
+  <!-- Global Scope Parameters -->
+  <div class="bg-white p-4 rounded shadow">
+    <h4 class="font-medium mb-2">Global Parameters</h4>
+    <form
+      hx-post="/save_globals"
+      hx-swap="none"
+      class="space-y-2"
+      id="global-form"
+    >
+      <div
+        id="global-params-fields"
+        data-initial-gp-count="{{ global_params.initial | length }}"
+        class="space-y-2"
+      >
+        {% set idx = 0 %}
+        {% for key, val in global_params.initial.items() %}
+          <div
+            class="flex space-x-2 flex-wrap"
+            id="gp-field-{{ idx }}"
+          >
+            <input
+              type="text"
+              name="gk_{{ idx }}"
+              value="{{ key }}"
+              placeholder="Key"
+              class="min-w-0 flex-1 border rounded px-2 py-1"
+            >
+            <input
+              type="text"
+              name="gv_{{ idx }}"
+              value="{{ val }}"
+              placeholder="Value"
+              class="min-w-0 flex-1 border rounded px-2 py-1"
+            >
+            <button
+              type="button"
+              onclick="document.getElementById('gp-field-{{ idx }}').remove();"
+              class="text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          </div>
+          {% set idx = idx + 1 %}
+        {% endfor %}
+        <!-- Empty field for new key/value -->
+        <div
+          class="flex space-x-2 flex-wrap"
+          id="gp-field-{{ idx }}"
+        >
+          <input
+            type="text"
+            name="gk_{{ idx }}"
+            placeholder="Key"
+            class="min-w-0 flex-1 border rounded px-2 py-1"
+          >
+          <input
+            type="text"
+            name="gv_{{ idx }}"
+            placeholder="Value"
+            class="min-w-0 flex-1 border rounded px-2 py-1"
+          >
+          <button
+            type="button"
+            onclick="document.getElementById('gp-field-{{ idx }}').remove();"
+            class="text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      <button
+        type="button"
+        id="add-gparam"
+        class="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+      >
+        + Add Parameter
+      </button>
+      <button
+        type="submit"
+        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600 ml-2"
+      >
+        Save
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- JavaScript for Global Params dynamic fields -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const gpFields = document.getElementById('global-params-fields');
+    let gpCount = parseInt(gpFields.dataset.initialGpCount) + 1;
+
+    document.querySelector('#add-gparam').addEventListener('click', function() {
+      const div = document.createElement('div');
+      div.className = 'flex space-x-2 flex-wrap';
+      div.id = `gp-field-${gpCount}`;
+      div.innerHTML = `
+        <input
+          type="text"
+          name="gk_${gpCount}"
+          placeholder="Key"
+          class="min-w-0 flex-1 border rounded px-2 py-1"
+        >
+        <input
+          type="text"
+          name="gv_${gpCount}"
+          placeholder="Value"
+          class="min-w-0 flex-1 border rounded px-2 py-1"
+        >
+        <button
+          type="button"
+          onclick="document.getElementById('gp-field-${gpCount}').remove();"
+          class="text-red-500 hover:text-red-700"
+        >
+          ✕
+        </button>
+      `;
+      gpFields.appendChild(div);
+      gpCount++;
+    });
+
+    document.getElementById('reset-env-form').addEventListener('click', function() {
+      window.location.href = '/envs';
+    });
+  });
+</script>
+{% endblock %}
