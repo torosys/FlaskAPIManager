@@ -22,6 +22,7 @@
 
   <!-- Add Environment Form -->
   <form
+    method="post"
     hx-post="/envs"
     hx-target="#envs-list"
     hx-swap="outerHTML"
@@ -87,6 +88,7 @@
   <div class="bg-primary text-main p-4 rounded shadow">
     <h4 class="font-medium mb-2">Global Parameters</h4>
     <form
+      method="post"
       hx-post="/save_globals"
       hx-swap="none"
       class="space-y-2"
@@ -119,6 +121,8 @@
             >
             <button
               type="button"
+              hx-post="/delete_global/{{ key }}"
+              hx-swap="none"
               onclick="document.getElementById('gp-field-{{ idx }}').remove();"
               class="text-accent hover-text-cta"
             >
