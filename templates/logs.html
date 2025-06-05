@@ -1,5 +1,5 @@
 {% for entry in logs %}
-  <div class="mb-2 text-sm {% if entry.type == 'error' %}text-accent{% else %}text-main{% endif %}">
+  <div class="mb-2 text-sm {% if entry.type == 'error' %}text-accent{% else %}text-log{% endif %}">
     <pre class="whitespace-pre-wrap">{{ entry.message }}</pre>
   </div>
 {% endfor %}
