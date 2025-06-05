@@ -226,8 +226,9 @@ def delete_global(gkey):
 def commands():
     if not is_logged_in():
         return redirect(url_for('login'))
-    list_only = request.args.get('list_only') == '1'
-    form_only = request.args.get('form_only') == '1'
+    hx = request.headers.get('HX-Request') == 'true'
+    list_only = request.args.get('list_only') == '1' if hx else False
+    form_only = request.args.get('form_only') == '1' if hx else False
     conn = get_db_connection()
     error_msg = None
     if request.method == 'POST':
@@ -268,10 +269,12 @@ def commands():
             conn.commit()
         except sqlite3.IntegrityError:
             error_msg = 'A command with that name already exists.'
-        list_only = request.args.get('list_only') == '1'
-        form_only = request.args.get('form_only') == '1'
+        list_only = request.args.get('list_only') == '1' if hx else False
+        form_only = request.args.get('form_only') == '1' if hx else False
     cmds = conn.execute('SELECT * FROM commands').fetchall()
     conn.close()
+    if not hx:
+        return render_template('commands.html', commands=cmds, error_msg=error_msg)
     if list_only:
         return render_template('commands_list.html', commands=cmds)
     if form_only:
