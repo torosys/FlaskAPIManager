@@ -146,8 +146,9 @@ def delete_env(env_id):
     conn = get_db_connection()
     conn.execute('DELETE FROM environments WHERE id=?', (env_id,))
     conn.commit()
+    envs = conn.execute('SELECT * FROM environments').fetchall()
     conn.close()
-    return jsonify({'status': 'success'})
+    return render_template('envs_list.html', envs=envs)
 
 @app.route('/toggle_default/<int:env_id>', methods=['POST'])
 def toggle_default(env_id):
