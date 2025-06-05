@@ -1,0 +1,5 @@
+{% for entry in logs %}
+  <div class="mb-2 text-sm {% if entry.type == 'error' %}text-red-600{% else %}text-gray-800{% endif %}">
+    <pre class="whitespace-pre-wrap">{{ entry.message }}</pre>
+  </div>
+{% endfor %}

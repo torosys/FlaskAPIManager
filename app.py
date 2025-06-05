@@ -321,14 +321,21 @@ def execute_script():
             body = body.replace(placeholder, val)
             headers = {k: v.replace(placeholder, val) for k, v in headers.items()}
             params = {k: v.replace(placeholder, val) for k, v in params.items()}
+        log_entries.append({
+            'type': 'info',
+            'message': f"REQUEST {cmd_name}: {cmd['http_method']} {url}\nHeaders: {json.dumps(headers)}\nParams: {json.dumps(params)}\nBody: {body}"
+        })
         try:
             resp = http_session.request(cmd['http_method'], url, headers=headers, params=params, data=body)
             status = resp.status_code
-            log_entries.append({'type': 'info', 'message': f'{cmd_name}: {status}'})
             try:
                 resp_json = resp.json()
             except ValueError:
                 resp_json = {'raw': resp.text}
+            log_entries.append({
+                'type': 'info',
+                'message': f"RESPONSE {cmd_name}: {status}\n{json.dumps(resp_json, indent=2)}"
+            })
             results.append({'command': cmd_name, 'response': resp_json})
             if cmd['extract_rule'] and isinstance(resp_json, (dict, list)):
                 extracted = jmespath.search(cmd['extract_rule'], resp_json)
@@ -341,7 +348,7 @@ def execute_script():
             log_entries.append({'type': 'error', 'message': f'{cmd_name} exception: {str(e)}'})
             break
     session['results'] = results
-    return jsonify({'logs': log_entries, 'results': results})
+    return render_template('logs.html', logs=log_entries)
 
 @app.route('/results', methods=['GET'])
 def get_results():
