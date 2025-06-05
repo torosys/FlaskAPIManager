@@ -8,42 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #F2F2F2;
-            --secondary: #96c6dd;
-            --background: #F9FAFC;
-            --accent: #EBCCEA;
-            --hover-cta: #D8BBD8;
-            --text-main: #211E53;
-            --subtext: #6B6B8B;
-        }
-        .bg-primary { background-color: var(--primary); }
-        .bg-secondary { background-color: var(--secondary); }
-        .bg-accent { background-color: var(--accent); }
-        .bg-background { background-color: var(--background); }
-        .bg-edit { background-color: #B7A9FF; }
-        .bg-delete { background-color: var(--accent); }
-        .bg-update { background-color: var(--hover-cta); }
-        .gradient-execute { background-image: linear-gradient(90deg, var(--accent), var(--hover-cta)); }
-        .hover-cta:hover { background-color: var(--hover-cta); }
-        .text-main { color: var(--text-main); }
-        .text-sub { color: var(--subtext); }
-        .hover-text-cta:hover { color: var(--hover-cta); }
-        .text-accent { color: var(--accent); }
-        .text-background { color: var(--background); }
-
-        /* Font settings */
-        label, h1, h2, h3, h4, h5, h6 {
-            font-family: 'Inter', sans-serif;
-        }
-
-        input, textarea, select {
-            font-family: 'JetBrains Mono', monospace;
-        }
-    </style>
+    <!-- Google Font -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body class="font-sans" style="background-color: var(--background); color: var(--text-main); font-family: 'Inter', sans-serif;">
     {% block navbar %}
