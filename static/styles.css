@@ -35,6 +35,11 @@ input, textarea, select {
     font-family: 'JetBrains Mono', monospace;
 }
 
+/* Remove default outline and add accent ring on focus for form controls */
+input:focus, textarea:focus, select:focus {
+    @apply outline-none ring-2 ring-accent;
+}
+
 /* CodeMirror token colors */
 .cm-purple { color: purple; }
 .cm-red { color: red; }
