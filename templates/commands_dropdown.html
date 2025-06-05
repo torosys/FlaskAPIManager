@@ -1,0 +1,10 @@
+<div class="bg-primary text-main p-4 rounded shadow mb-4" id="commands-dropdown-container">
+  <h3 class="font-semibold mb-2">Commands</h3>
+  <input type="text" name="search" id="cmd-search"
+         placeholder="Search commands..."
+         class="w-full border rounded px-2 py-1 mb-2"
+         hx-get="/commands/list"
+         hx-target="#commands-list"
+         hx-trigger="keyup changed delay:300ms">
+  <div id="commands-list" hx-get="/commands/list" hx-trigger="load" hx-swap="innerHTML"></div>
+</div>

@@ -230,6 +230,8 @@
 
   <!-- Right Pane: Live Log -->
   <div class="col-span-1 flex flex-col space-y-4 overflow-auto">
+    <div hx-get="/commands/dropdown" hx-trigger="load" hx-target="#commands-dropdown" hx-swap="innerHTML"></div>
+    <div id="commands-dropdown"></div>
     <div class="bg-primary text-main p-4 rounded shadow flex-1 overflow-auto">
       <div class="flex items-center justify-between mb-2">
         <h3 class="font-semibold">Live Log</h3>
