@@ -32,3 +32,9 @@ label, h1, h2, h3, h4, h5, h6 {
 input, textarea, select {
     font-family: 'JetBrains Mono', monospace;
 }
+
+/* CodeMirror token colors */
+.cm-purple { color: purple; }
+.cm-red { color: red; }
+.cm-dblue { color: darkblue; }
+.cm-lblue { color: #1e90ff; }
