@@ -22,6 +22,11 @@ init_db()
 # Persistent requests.Session for storing cookies
 http_session = requests.Session()
 
+
+def _set_log_level():
+    if app.debug:
+        logger.setLevel(logging.DEBUG)
+
 # Helper: check if user is logged in
 
 def is_logged_in():
@@ -268,31 +273,19 @@ def delete_global(gkey):
 
 # ─── COMMANDS & EXECUTION ROUTES ──────────────────────────────────────────────
 
+
 @app.get('/commands')
-def list_commands():
+def commands_page():
     if not is_logged_in():
         return redirect(url_for('login'))
-    hx = request.headers.get('HX-Request') == 'true'
-    list_only = request.args.get('list_only') == '1'
-    conn = get_db_connection()
-    try:
-        cmds = conn.execute('SELECT * FROM commands').fetchall()
-    except Exception:
-        logger.exception('Error fetching commands')
-        conn.close()
-        return jsonify({'error': 'Internal error'}), 500
-    finally:
-        conn.close()
-    if hx or list_only:
-        return render_template('commands_list.html', commands=cmds)
-    return render_template('commands_page.html', commands=cmds)
+    return render_template('commands_page.html')
+
 
 @app.get('/commands/form')
 def command_form():
     if not is_logged_in():
         return redirect(url_for('login'))
-    target = request.args.get('target') or 'main-command-form'
-    return render_template('commands_form.html', target=target)
+    return render_template('commands_form.html')
 
 @app.post('/commands')
 def save_command():
@@ -302,7 +295,6 @@ def save_command():
     error_msg = None
     try:
         data = request.form
-        cmd_id = data.get('cmd_id')
         headers_json = json.dumps([
             {'key': k, 'value': v}
             for k, v in zip(request.form.getlist('header_key'), request.form.getlist('header_val'))
@@ -314,29 +306,19 @@ def save_command():
             if k
         ])
         try:
-            if cmd_id:
-                conn.execute(
-                    'UPDATE commands SET name=?, http_method=?, endpoint=?, headers=?, params=?, auth_type=?, body_template=?, extract_rule=?, notes=? WHERE id=?',
-                    (
-                        data['name'], data['http_method'], data['endpoint'],
-                        headers_json, params_json,
-                        data.get('auth_type'), data.get('body_template'),
-                        data.get('extract_rule'), data.get('notes'),
-                        cmd_id
-                    )
+            conn.execute(
+                'INSERT INTO commands (name, http_method, endpoint, headers, params, auth_type, body_template, extract_rule, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (
+                    data['name'], data['http_method'], data['endpoint'],
+                    headers_json, params_json,
+                    data.get('auth_type'), data.get('body_template'),
+                    data.get('extract_rule'), data.get('notes')
                 )
-            else:
-                conn.execute(
-                    'INSERT INTO commands (name, http_method, endpoint, headers, params, auth_type, body_template, extract_rule, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (
-                        data['name'], data['http_method'], data['endpoint'],
-                        headers_json, params_json,
-                        data.get('auth_type'), data.get('body_template'),
-                        data.get('extract_rule'), data.get('notes')
-                    )
-                )
+            )
             conn.commit()
             logger.info('Command %s saved', data['name'])
+            if app.debug:
+                logger.debug('Inserted command data: %s', dict(data))
         except sqlite3.IntegrityError:
             error_msg = 'A command with that name already exists.'
     except Exception:
@@ -345,13 +327,7 @@ def save_command():
         return jsonify({'error': 'Internal error'}), 500
     finally:
         conn.close()
-    target = request.args.get('target') or 'main-command-form'
-    resp = make_response(
-        render_template('commands_form.html', error_msg=error_msg, target=target)
-    )
-    if error_msg is None:
-        resp.headers['HX-Trigger'] = 'refreshList'
-    return resp
+    return render_template('commands_form.html', error_msg=error_msg)
 
 @app.route('/delete_command/<int:cmd_id>', methods=['POST'])
 def delete_command(cmd_id):
@@ -368,27 +344,9 @@ def delete_command(cmd_id):
     finally:
         conn.close()
         
-    return redirect(url_for('list_commands'))
+    return redirect(url_for('commands_page'))
 
-@app.route('/edit_command/<int:cmd_id>', methods=['GET'])
-def edit_command(cmd_id):
-    if not is_logged_in():
-        return redirect(url_for('login'))
-    conn = get_db_connection()
-    try:
-        cmd = conn.execute('SELECT * FROM commands WHERE id = ?', (cmd_id,)).fetchone()
-    except Exception:
-        conn.close()
-        logger.exception('Failed to fetch command %s', cmd_id)
-        return redirect(url_for('list_commands'))
-    finally:
-        conn.close()
-    if not cmd:
-        return redirect(url_for('list_commands'))
-    headers_list = json.loads(cmd['headers'] or '[]')
-    params_list = json.loads(cmd['params'] or '[]')
-    logger.info('Editing command %s', cmd['name'])
-    return render_template('edit_command.html', cmd=cmd, headers=headers_list, params=params_list)
+
 
 @app.route('/execute', methods=['POST'])
 def execute_script():
@@ -490,4 +448,6 @@ def view_request_logs():
     return render_template('request_logs.html', logs=logs)
 
 if __name__ == '__main__':
+    app.config['DEBUG'] = True
+    _set_log_level()
     app.run(debug=True)
