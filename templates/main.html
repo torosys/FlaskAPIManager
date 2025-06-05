@@ -252,6 +252,12 @@
   document.addEventListener('DOMContentLoaded', function() {
     fetchResults();
   });
+
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.target && evt.target.id === 'log-section') {
+      fetchResults();
+    }
+  });
   function fetchResults() {
     fetch('/results')
       .then(res => res.json())
