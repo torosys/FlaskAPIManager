@@ -20,7 +20,7 @@
       <div class="flex space-x-2" id="hdr-0">
         <input type="text" name="header_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
         <input type="text" name="header_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
-        <button type="button" onclick="this.parentNode.remove();" class="text-accent hover-text-cta">✕</button>
+        <button type="button" onclick="this.parentNode.remove();" class="text-accent hover-text-cta font-bold">✕</button>
       </div>
     </div>
     <button type="button" id="add-header" class="bg-secondary text-background px-2 py-1 rounded hover-cta">+ Add Header</button>
@@ -30,7 +30,7 @@
       <div class="flex space-x-2" id="prm-0">
         <input type="text" name="param_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
         <input type="text" name="param_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
-        <button type="button" onclick="this.parentNode.remove();" class="text-accent hover-text-cta">✕</button>
+        <button type="button" onclick="this.parentNode.remove();" class="text-accent hover-text-cta font-bold">✕</button>
       </div>
     </div>
     <button type="button" id="add-param" class="bg-secondary text-background px-2 py-1 rounded hover-cta">+ Add Parameter</button>
@@ -74,7 +74,7 @@
       div.innerHTML = `
         <input type="text" name="header_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
         <input type="text" name="header_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
-        <button type="button" onclick="document.getElementById('hdr-${hdrCount}').remove();" class="text-accent hover-text-cta">✕</button>
+        <button type="button" onclick="document.getElementById('hdr-${hdrCount}').remove();" class="text-accent hover-text-cta font-bold">✕</button>
       `;
       hdrContainer.appendChild(div);
       hdrCount++;
@@ -89,7 +89,7 @@
       div.innerHTML = `
         <input type="text" name="param_key" placeholder="Key" class="flex-1 border rounded px-2 py-1">
         <input type="text" name="param_val" placeholder="Value" class="flex-1 border rounded px-2 py-1">
-        <button type="button" onclick="document.getElementById('prm-${prmCount}').remove();" class="text-accent hover-text-cta">✕</button>
+        <button type="button" onclick="document.getElementById('prm-${prmCount}').remove();" class="text-accent hover-text-cta font-bold">✕</button>
       `;
       prmContainer.appendChild(div);
       prmCount++;
