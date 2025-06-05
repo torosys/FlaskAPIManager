@@ -201,6 +201,25 @@ def save_globals():
     session['global_params'] = {'initial': initial, 'current': initial.copy()}
     return jsonify({'status': 'success'})
 
+@app.route('/delete_global/<gkey>', methods=['POST'])
+def delete_global(gkey):
+    if not is_logged_in():
+        return jsonify({'error': 'Not logged in'}), 401
+    conn = get_db_connection()
+    user = conn.execute('SELECT id FROM users WHERE username = ?', (session['username'],)).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({'error': 'User not found'}), 400
+    uid = user['id']
+    conn.execute('DELETE FROM global_params WHERE user_id = ? AND gkey = ?', (uid, gkey))
+    conn.commit()
+    conn.close()
+    gp = session.get('global_params', {'initial': {}, 'current': {}})
+    gp.get('initial', {}).pop(gkey, None)
+    gp.get('current', {}).pop(gkey, None)
+    session['global_params'] = gp
+    return ('', 204)
+
 # ─── COMMANDS & EXECUTION ROUTES (UNCHANGED) ───────────────────────────────────
 
 @app.route('/commands', methods=['GET', 'POST'])
