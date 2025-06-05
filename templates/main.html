@@ -309,7 +309,16 @@
       function formatBracketedSql() {
         if (!window.sqlFormatter) return;
         const src = window.editor.getValue();
-        const formatted = src.replace(/\[[^\]]+\]/g, m => '[' + sqlFormatter.format(m.slice(1, -1)) + ']');
+        const formatted = src.replace(/\[[^\]]*(?:\]|$)/g, m => {
+          const hasClose = m.endsWith(']');
+          const inner = hasClose ? m.slice(1, -1) : m.slice(1);
+          const closing = hasClose ? ']' : '';
+          return '[' +
+            sqlFormatter.format(inner, {
+              keywordCase: 'upper',
+              linesBetweenQueries: 0
+            }) + closing;
+        });
         if (formatted !== src) {
           const cursor = window.editor.getCursor();
           window.editor.setValue(formatted);
@@ -319,6 +328,16 @@
       window.editor.on('change', () => {
         clearTimeout(formatTimeout);
         formatTimeout = setTimeout(formatBracketedSql, 500);
+      });
+
+      window.editor.on('inputRead', (cm, change) => {
+        if (change.text && change.text.length > 1 && change.origin === '+input') {
+          const pos = change.from;
+          const prev = cm.getRange({ line: pos.line, ch: pos.ch - 1 }, pos);
+          if (prev === ']') {
+            cm.indentLine(pos.line + 1, 0);
+          }
+        }
       });
     }
 
