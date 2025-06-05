@@ -2,7 +2,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <h3 class="text-lg font-semibold mb-4">Edit Command: {{ cmd['name'] }}</h3>
-  <form hx-post="/commands" hx-target="#commands-list" hx-swap="outerHTML" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
+  <form hx-post="/commands?list_only=1" hx-target="#commands-list" hx-swap="outerHTML" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
     <input type="hidden" name="cmd_id" value="{{ cmd['id'] }}">
     <div class="flex space-x-2 items-center">
       <input type="text" name="name" value="{{ cmd['name'] }}" class="flex-1 border rounded px-2 py-1" required>
@@ -70,6 +70,10 @@
       <button type="button" id="reset-form-edit" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
     </div>
   </form>
+
+  <!-- Command list loaded via HTMX -->
+  <div hx-get="/commands?list_only=1" hx-trigger="load" hx-target="#commands-list" hx-swap="outerHTML"></div>
+  <div id="commands-list"></div>
 </div>
 
 <!-- JavaScript for dynamic header/param fields -->
