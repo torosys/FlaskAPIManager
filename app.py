@@ -281,6 +281,35 @@ def commands_page():
     return render_template('commands_page.html')
 
 
+@app.get('/commands/list')
+def list_commands():
+    """Return list of commands, optionally filtered by a search term."""
+    if not is_logged_in():
+        return redirect(url_for('login'))
+
+    search = request.args.get('search', '').strip()
+    conn = get_db_connection()
+    try:
+        if search:
+            like = f"%{search}%"
+            cmds = conn.execute(
+                "SELECT * FROM commands WHERE name LIKE ? ORDER BY name",
+                (like,)
+            ).fetchall()
+        else:
+            cmds = conn.execute(
+                "SELECT * FROM commands ORDER BY name"
+            ).fetchall()
+    except Exception:
+        logger.exception('Failed to fetch commands list')
+        conn.close()
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
+
+    return render_template('commands_list.html', commands=cmds)
+
+
 @app.get('/commands/form')
 def command_form():
     if not is_logged_in():
