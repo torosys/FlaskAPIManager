@@ -285,21 +285,26 @@
       .catch(() => setupEditor([]));
   }
 
-  function setupEditor(cmds) {
-    const cmdRegex = cmds.length ? new RegExp('\\b(' + cmds.join('|') + ')\\b', 'i') : /$^/;
-    CodeMirror.defineSimpleMode('custom-cmd', {
-      start: [
-        {regex: /\b(?:And|If|Not|Remote|Catch|Inparallel|Null|Try|Else|Is|Or|Finally|Like|Parallel|Raw)\b/i, token: 'purple'},
-        {regex: /[+\-*/%]/, token: 'red'},
-        {regex: /\b(?:Select|From|Where|Group\s+by|Order\s+by|Join|On|Insert|Update|Delete)\b/i, token: 'dblue'},
-        {regex: cmdRegex, token: 'lblue'}
-      ]
-    });
-    window.editor = CodeMirror.fromTextArea(document.getElementById('script'), {
-      lineNumbers: true,
-      mode: 'custom-cmd'
-    });
-  }
+    function setupEditor(cmds) {
+      const cmdRegex = cmds.length ? new RegExp('\\b(' + cmds.join('|') + ')\\b', 'i') : /$^/;
+      CodeMirror.defineSimpleMode('custom-cmd', {
+        start: [
+          {regex: /\/\*/, token: 'comment', next: 'comment'},
+          {regex: /\b(?:And|If|Not|Remote|Catch|Inparallel|Null|Try|Else|Is|Or|Finally|Like|Parallel|Raw)\b/i, token: 'purple'},
+          {regex: /[+\-*/%]/, token: 'red'},
+          {regex: /\b(?:Select|From|Where|Group\s+by|Order\s+by|Join|On|Insert|Update|Delete)\b/i, token: 'dblue'},
+          {regex: cmdRegex, token: 'lblue'}
+        ],
+        comment: [
+          {regex: /.*?\*\//, token: 'comment', next: 'start'},
+          {regex: /.*/, token: 'comment'}
+        ]
+      });
+      window.editor = CodeMirror.fromTextArea(document.getElementById('script'), {
+        lineNumbers: true,
+        mode: 'custom-cmd'
+      });
+    }
 
   document.getElementById('run-btn').addEventListener('click', function() {
     if (window.editor) {
