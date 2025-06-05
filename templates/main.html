@@ -231,7 +231,12 @@
   <!-- Right Pane: Live Log -->
   <div class="col-span-1 flex flex-col space-y-4 overflow-auto">
     <div class="bg-primary text-main p-4 rounded shadow flex-1 overflow-auto">
-      <h3 class="font-semibold mb-2">Live Log</h3>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold">Live Log</h3>
+        <button id="copy-log-btn" class="hover-text-cta text-lg" title="Copy log">
+          📋
+        </button>
+      </div>
       <div id="log-section" class="h-full overflow-auto"></div>
     </div>
   </div>
@@ -255,6 +260,15 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     fetchResults();
+    const copyBtn = document.getElementById('copy-log-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        const logs = Array.from(document.querySelectorAll('#log-section pre'))
+          .map(pre => pre.textContent)
+          .join('\n');
+        navigator.clipboard.writeText(logs);
+      });
+    }
   });
 
   document.body.addEventListener('htmx:afterSwap', function(evt) {
