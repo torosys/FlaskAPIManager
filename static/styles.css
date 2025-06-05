@@ -6,6 +6,7 @@
     --hover-cta: #D8BBD8;
     --text-main: #211E53;
     --subtext: #6B6B8B;
+    --log-text: #1B1744;
 }
 .bg-primary { background-color: var(--primary); }
 .bg-secondary { background-color: var(--secondary); }
@@ -21,6 +22,7 @@
 .hover-text-cta:hover { color: var(--hover-cta); }
 .text-accent { color: var(--accent); }
 .text-background { color: var(--background); }
+.text-log { color: var(--log-text); }
 
 /* Font settings */
 label, h1, h2, h3, h4, h5, h6 {
