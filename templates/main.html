@@ -328,6 +328,18 @@
           if (prev === ']') {
             cm.indentLine(pos.line + 1, 0);
           }
+
+          if (change.text.join('') === '') {
+            const lineContent = cm.getLine(pos.line);
+            if (lineContent.trim() === '|') {
+              const indent = lineContent.match(/^\s*/)[0];
+              cm.setLine(pos.line, '|');
+              const nextLine = cm.getLine(pos.line + 1);
+              if (!nextLine.startsWith(indent)) {
+                cm.replaceRange(indent, { line: pos.line + 1, ch: 0 }, { line: pos.line + 1, ch: 0 });
+              }
+            }
+          }
         }
       });
     }
