@@ -266,73 +266,86 @@ def delete_global(gkey):
         conn.close()
     return ('', 204)
 
-# ─── COMMANDS & EXECUTION ROUTES (UNCHANGED) ───────────────────────────────────
+# ─── COMMANDS & EXECUTION ROUTES ──────────────────────────────────────────────
 
-@app.route('/commands', methods=['GET', 'POST'])
-def commands():
+@app.get('/commands')
+def list_commands():
     if not is_logged_in():
         return redirect(url_for('login'))
     hx = request.headers.get('HX-Request') == 'true'
-    list_only = request.args.get('list_only') == '1' if hx else False
-    form_only = request.args.get('form_only') == '1' if hx else False
-    target = request.args.get('target')
     conn = get_db_connection()
-    error_msg = None
     try:
-        if request.method == 'POST':
-            data = request.form
-            cmd_id = data.get('cmd_id')
-            headers_json = json.dumps([
-                {'key': k, 'value': v}
-                for k, v in zip(request.form.getlist('header_key'), request.form.getlist('header_val'))
-                if k
-            ])
-            params_json = json.dumps([
-                {'key': k, 'value': v}
-                for k, v in zip(request.form.getlist('param_key'), request.form.getlist('param_val'))
-                if k
-            ])
-            try:
-                if cmd_id:
-                    conn.execute(
-                        'UPDATE commands SET name=?, http_method=?, endpoint=?, headers=?, params=?, auth_type=?, body_template=?, extract_rule=?, notes=? WHERE id=?',
-                        (
-                            data['name'], data['http_method'], data['endpoint'],
-                            headers_json, params_json,
-                            data.get('auth_type'), data.get('body_template'),
-                            data.get('extract_rule'), data.get('notes'),
-                            cmd_id
-                        )
-                    )
-                else:
-                    conn.execute(
-                        'INSERT INTO commands (name, http_method, endpoint, headers, params, auth_type, body_template, extract_rule, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        (
-                            data['name'], data['http_method'], data['endpoint'],
-                            headers_json, params_json,
-                            data.get('auth_type'), data.get('body_template'),
-                            data.get('extract_rule'), data.get('notes')
-                        )
-                    )
-                conn.commit()
-                logger.info('Command %s saved', data['name'])
-            except sqlite3.IntegrityError:
-                error_msg = 'A command with that name already exists.'
         cmds = conn.execute('SELECT * FROM commands').fetchall()
     except Exception:
-        logger.exception('Error processing commands')
+        logger.exception('Error fetching commands')
         conn.close()
         return jsonify({'error': 'Internal error'}), 500
     finally:
         conn.close()
     if not hx:
-        return render_template('commands.html', commands=cmds, error_msg=error_msg)
-    if list_only:
-        return render_template('commands_list.html', commands=cmds)
-    if form_only:
-        target_id = target or 'main-command-form'
-        return render_template('commands_form.html', commands=cmds, error_msg=error_msg, target=target_id)
-    return render_template('commands.html', commands=cmds, error_msg=error_msg)
+        return render_template('commands.html')
+    return render_template('commands_list.html', commands=cmds)
+
+@app.get('/commands/form')
+def command_form():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    target = request.args.get('target') or 'main-command-form'
+    return render_template('commands_form.html', target=target)
+
+@app.post('/commands')
+def save_command():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    error_msg = None
+    try:
+        data = request.form
+        cmd_id = data.get('cmd_id')
+        headers_json = json.dumps([
+            {'key': k, 'value': v}
+            for k, v in zip(request.form.getlist('header_key'), request.form.getlist('header_val'))
+            if k
+        ])
+        params_json = json.dumps([
+            {'key': k, 'value': v}
+            for k, v in zip(request.form.getlist('param_key'), request.form.getlist('param_val'))
+            if k
+        ])
+        try:
+            if cmd_id:
+                conn.execute(
+                    'UPDATE commands SET name=?, http_method=?, endpoint=?, headers=?, params=?, auth_type=?, body_template=?, extract_rule=?, notes=? WHERE id=?',
+                    (
+                        data['name'], data['http_method'], data['endpoint'],
+                        headers_json, params_json,
+                        data.get('auth_type'), data.get('body_template'),
+                        data.get('extract_rule'), data.get('notes'),
+                        cmd_id
+                    )
+                )
+            else:
+                conn.execute(
+                    'INSERT INTO commands (name, http_method, endpoint, headers, params, auth_type, body_template, extract_rule, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (
+                        data['name'], data['http_method'], data['endpoint'],
+                        headers_json, params_json,
+                        data.get('auth_type'), data.get('body_template'),
+                        data.get('extract_rule'), data.get('notes')
+                    )
+                )
+            conn.commit()
+            logger.info('Command %s saved', data['name'])
+        except sqlite3.IntegrityError:
+            error_msg = 'A command with that name already exists.'
+    except Exception:
+        logger.exception('Error saving command')
+        conn.close()
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
+    target = request.args.get('target') or 'main-command-form'
+    return render_template('commands_form.html', error_msg=error_msg, target=target)
 
 @app.route('/delete_command/<int:cmd_id>', methods=['POST'])
 def delete_command(cmd_id):
@@ -349,7 +362,7 @@ def delete_command(cmd_id):
     finally:
         conn.close()
         
-    return redirect(url_for('commands'))
+    return redirect(url_for('list_commands'))
 
 @app.route('/edit_command/<int:cmd_id>', methods=['GET'])
 def edit_command(cmd_id):
@@ -361,11 +374,11 @@ def edit_command(cmd_id):
     except Exception:
         conn.close()
         logger.exception('Failed to fetch command %s', cmd_id)
-        return redirect(url_for('commands'))
+        return redirect(url_for('list_commands'))
     finally:
         conn.close()
     if not cmd:
-        return redirect(url_for('commands'))
+        return redirect(url_for('list_commands'))
     headers_list = json.loads(cmd['headers'] or '[]')
     params_list = json.loads(cmd['params'] or '[]')
     logger.info('Editing command %s', cmd['name'])
