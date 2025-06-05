@@ -105,3 +105,17 @@ def test_delete_command_removes_record(client):
     conn.close()
     assert deleted is None
 
+
+def test_commands_list_endpoint_returns_commands(client):
+    """List endpoint should return 200 and include command names."""
+    cmd1 = {'name': 'CmdOne', 'http_method': 'GET', 'endpoint': '/one'}
+    cmd2 = {'name': 'CmdTwo', 'http_method': 'POST', 'endpoint': '/two'}
+
+    client.post('/commands', data=cmd1)
+    client.post('/commands', data=cmd2)
+
+    resp = client.get('/commands/list')
+    assert resp.status_code == 200
+    assert b'CmdOne' in resp.data
+    assert b'CmdTwo' in resp.data
+
