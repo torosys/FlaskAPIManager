@@ -1,4 +1,11 @@
-<form method="post" action="/commands" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
+<form method="post"
+      action="/commands"
+      hx-post="/commands"
+      hx-target="#main-command-form"
+      hx-swap="outerHTML"
+      hx-on="htmx:afterSwap:this.reset()"
+      class="bg-white p-4 rounded shadow space-y-3"
+      id="command-form">
   <div class="flex space-x-2 items-center flex-wrap">
     <input type="text" name="name" id="name" placeholder="Name" class="min-w-0 flex-1 border rounded px-2 py-1" required>
     <select name="http_method" id="http_method" class="border rounded px-2 py-1">
