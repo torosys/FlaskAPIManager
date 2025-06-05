@@ -2,11 +2,6 @@
 
 {% block content %}
 <div class="space-y-6">
-  {% include 'commands_form.html' with target='command-form' %}
-  <div hx-get="/commands" hx-trigger="load,refreshList from:body" hx-target="#commands-list" hx-swap="outerHTML"></div>
-  <div hx-get="/commands/form?target=command-form" hx-trigger="load" hx-target="#command-form" hx-swap="outerHTML" style="display:none"></div>
-  <div id="commands-list">
-    {% include 'commands_list.html' %}
-  </div>
+  {% include 'commands_form.html' %}
 </div>
 {% endblock %}

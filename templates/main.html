@@ -273,16 +273,7 @@
   });
 
   function initEditor() {
-    fetch('/commands?list_only=1')
-      .then(res => res.text())
-      .then(txt => {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = txt;
-        const cmds = Array.from(tmp.querySelectorAll('.font-semibold'))
-                      .map(el => el.textContent.trim());
-        setupEditor(cmds);
-      })
-      .catch(() => setupEditor([]));
+    setupEditor([]);
   }
 
     function setupEditor(cmds) {
