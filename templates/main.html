@@ -411,6 +411,10 @@
   document.body.addEventListener('htmx:afterSwap', function(evt) {
     if (evt.target && evt.target.id === 'log-section') {
       fetchResults();
+    } else if (evt.target && evt.target.id === 'main-command-form') {
+      if (typeof initCommandForm === 'function') {
+        initCommandForm();
+      }
     }
   });
   function fetchResults() {
