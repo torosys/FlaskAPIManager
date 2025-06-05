@@ -13,7 +13,7 @@
       hx-include="[name=auth_url]"
       hx-trigger="click"
       hx-swap="none"
-      class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-500"
+      class="bg-secondary text-background px-3 py-1 rounded hover-cta"
     >
       Authenticate
     </button>
@@ -25,7 +25,7 @@
     hx-post="/envs"
     hx-target="#envs-list"
     hx-swap="outerHTML"
-    class="bg-white p-4 rounded shadow space-y-3"
+    class="bg-primary text-main p-4 rounded shadow space-y-3"
   >
     <input type="hidden" name="env_id" id="env_id">
     <div class="flex space-x-2 items-center flex-wrap">
@@ -65,14 +65,14 @@
     <div class="flex space-x-2 mt-2">
       <button
         type="submit"
-        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600"
+        class="bg-primary text-main px-4 py-2 rounded hover-cta"
       >
         Save Environment
       </button>
       <button
         type="button"
         id="reset-env-form"
-        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400"
+        class="bg-edit text-background px-4 py-2 rounded hover-cta"
       >
         Cancel
       </button>
@@ -84,7 +84,7 @@
   <div id="envs-list"></div>
 
   <!-- Global Scope Parameters -->
-  <div class="bg-white p-4 rounded shadow">
+  <div class="bg-primary text-main p-4 rounded shadow">
     <h4 class="font-medium mb-2">Global Parameters</h4>
     <form
       hx-post="/save_globals"
@@ -120,7 +120,7 @@
             <button
               type="button"
               onclick="document.getElementById('gp-field-{{ idx }}').remove();"
-              class="text-red-500 hover:text-red-700"
+              class="text-accent hover-text-cta"
             >
               ✕
             </button>
@@ -147,7 +147,7 @@
           <button
             type="button"
             onclick="document.getElementById('gp-field-{{ idx }}').remove();"
-            class="text-red-500 hover:text-red-700"
+            class="text-accent hover-text-cta"
           >
             ✕
           </button>
@@ -156,13 +156,13 @@
       <button
         type="button"
         id="add-gparam"
-        class="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+        class="bg-secondary text-background px-2 py-1 rounded hover-cta"
       >
         + Add Parameter
       </button>
       <button
         type="submit"
-        class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600 ml-2"
+        class="bg-primary text-main px-4 py-2 rounded hover-cta ml-2"
       >
         Save
       </button>
@@ -196,7 +196,7 @@
         <button
           type="button"
           onclick="document.getElementById('gp-field-${gpCount}').remove();"
-          class="text-red-500 hover:text-red-700"
+          class="text-accent hover-text-cta"
         >
           ✕
         </button>

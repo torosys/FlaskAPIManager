@@ -12,7 +12,7 @@
         hx-include="[name=auth_url]"
         hx-trigger="click"
         hx-swap="none"
-        class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-500"
+        class="bg-secondary text-background px-3 py-1 rounded hover-cta"
       >
         Authenticate
       </button>
@@ -24,7 +24,7 @@
       hx-post="/envs"
       hx-target="#envs-list"
       hx-swap="outerHTML"
-      class="bg-white p-4 rounded shadow space-y-3"
+      class="bg-primary text-main p-4 rounded shadow space-y-3"
     >
       <input type="hidden" name="env_id" id="env_id">
       <div class="flex space-x-2 items-center flex-wrap">
@@ -64,14 +64,14 @@
       <div class="flex space-x-2 mt-2">
         <button
           type="submit"
-          class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600"
+          class="bg-primary text-main px-4 py-2 rounded hover-cta"
         >
           Save Environment
         </button>
         <button
           type="button"
           id="reset-env-form"
-          class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-400"
+          class="bg-edit text-background px-4 py-2 rounded hover-cta"
         >
           Cancel
         </button>
@@ -88,7 +88,7 @@
     <div id="envs-list"></div>
 
     <!-- Global Scope Parameters -->
-    <div class="bg-white p-4 rounded shadow">
+    <div class="bg-primary text-main p-4 rounded shadow">
       <h4 class="font-medium mb-2">Global Parameters</h4>
       <form
         hx-post="/save_globals"
@@ -124,7 +124,7 @@
               <button
                 type="button"
                 onclick="document.getElementById('gp-field-{{ idx }}').remove();"
-                class="text-red-500 hover:text-red-700"
+                class="text-accent hover-text-cta"
               >
                 ✕
               </button>
@@ -151,7 +151,7 @@
             <button
               type="button"
               onclick="document.getElementById('gp-field-{{ idx }}').remove();"
-              class="text-red-500 hover:text-red-700"
+              class="text-accent hover-text-cta"
             >
               ✕
             </button>
@@ -160,13 +160,13 @@
         <button
           type="button"
           id="add-gparam"
-          class="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+          class="bg-secondary text-background px-2 py-1 rounded hover-cta"
         >
           + Add Parameter
         </button>
         <button
           type="submit"
-          class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600 ml-2"
+          class="bg-primary text-main px-4 py-2 rounded hover-cta ml-2"
         >
           Save
         </button>
@@ -199,7 +199,7 @@
             <button
               type="button"
               onclick="document.getElementById('gp-field-${gpCount}').remove();"
-              class="text-red-500 hover:text-red-700"
+              class="text-accent hover-text-cta"
             >
               ✕
             </button>
@@ -217,7 +217,7 @@
 
   <!-- Center Pane: Command Config Form -->
   <div class="col-span-1 md:col-span-1">
-    <div class="bg-white p-4 rounded shadow mb-4">
+    <div class="bg-primary text-main p-4 rounded shadow mb-4">
       <h3 class="text-lg font-semibold mb-2">Configure Command</h3>
       <div hx-get="/commands?form_only=1" hx-trigger="load" hx-target="#main-command-form" hx-swap="outerHTML"></div>
       <div id="main-command-form"></div>
@@ -226,7 +226,7 @@
 
   <!-- Right Pane: Live Log -->
   <div class="col-span-1 flex flex-col space-y-4 overflow-auto">
-    <div class="bg-white p-4 rounded shadow flex-1 overflow-auto">
+    <div class="bg-primary text-main p-4 rounded shadow flex-1 overflow-auto">
       <h3 class="font-semibold mb-2">Live Log</h3>
       <div id="log-section" class="h-full overflow-auto"></div>
     </div>
@@ -235,12 +235,12 @@
 
 <!-- Bottom Pane: Script Editor and API Responses spanning full width -->
 <div class="mt-4 space-y-4">
-  <div class="bg-white p-4 rounded shadow">
+  <div class="bg-primary text-main p-4 rounded shadow">
     <h3 class="font-semibold mb-2">Script Editor</h3>
     <textarea id="script" name="script" class="border w-full h-32 p-2 mb-4" placeholder="Enter commands, one per line..."></textarea>
-    <button id="run-btn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500" hx-post="/execute" hx-include="#script" hx-target="#log-section" hx-swap="innerHTML">Execute</button>
+    <button id="run-btn" class="gradient-execute text-main px-4 py-2 rounded hover-cta" hx-post="/execute" hx-include="#script" hx-target="#log-section" hx-swap="innerHTML">Execute</button>
   </div>
-  <div class="bg-white p-4 rounded shadow">
+  <div class="bg-primary text-main p-4 rounded shadow">
     <h3 class="text-lg font-semibold mb-2">API Responses</h3>
     <input type="text" id="search-input" placeholder="Search in responses..." class="w-full border rounded px-2 py-1 mb-3">
     <div id="results-container" class="space-y-4"></div>
@@ -269,7 +269,7 @@
     data.forEach(item => {
       const div = document.createElement('div');
       div.className = 'border p-2 rounded';
-      div.innerHTML = `<h4 class='font-medium'>${item.command}:</h4><pre class='bg-gray-100 p-2 rounded'>${JSON.stringify(item.response, null, 2)}</pre>`;
+      div.innerHTML = `<h4 class='font-medium'>${item.command}:</h4><pre class='bg-background p-2 rounded'>${JSON.stringify(item.response, null, 2)}</pre>`;
       container.appendChild(div);
     });
   }
