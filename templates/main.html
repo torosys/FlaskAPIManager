@@ -313,7 +313,7 @@
         if (formatted !== src) {
           const cursor = window.editor.getCursor();
           window.editor.setValue(formatted);
-          window.editor.setCursor(cursor);
+          window.editor.setCursor({ line: window.editor.lastLine(), ch: cursor.ch });
         }
       }
       window.editor.on('change', () => {
