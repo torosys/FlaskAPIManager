@@ -74,7 +74,7 @@
 
 <!-- JavaScript for dynamic header/param fields -->
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  function initCommandForm() {
     const hdrContainer = document.getElementById('headers-container');
     let hdrCount = parseInt(hdrContainer.dataset.initialHdrCount);
     document.getElementById('add-header').addEventListener('click', function() {
@@ -104,8 +104,20 @@
       prmContainer.appendChild(div);
       prmCount++;
     });
-    document.getElementById('reset-form-edit').addEventListener('click', function() {
-      window.location.href = '/commands';
-    });
+
+    const cancelBtn = document.getElementById('reset-form-edit');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        window.location.href = '/commands';
+      });
+    }
+  }
+
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.target.id === 'main-command-form' || evt.target.id === 'command-form') {
+      initCommandForm();
+    }
   });
+
+  initCommandForm();
 </script>
