@@ -49,6 +49,16 @@ CREATE TABLE IF NOT EXISTS global_params (
     UNIQUE(user_id, gkey),
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS request_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    method TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    request_body TEXT,
+    status_code INTEGER,
+    response_body TEXT,
+    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 '''
 
 
@@ -66,6 +76,17 @@ def init_db():
     cur.execute("SELECT * FROM users WHERE username = ?", ("SUPER",))
     if cur.fetchone() is None:
         cur.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("SUPER", "SUPER"))
+    conn.commit()
+    conn.close()
+
+
+def log_request(method, endpoint, request_body, status_code, response_body):
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO request_logs (method, endpoint, request_body, status_code, response_body) '
+        'VALUES (?, ?, ?, ?, ?)',
+        (method, endpoint, request_body, status_code, response_body)
+    )
     conn.commit()
     conn.close()
 

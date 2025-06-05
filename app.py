@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
-from db import init_db, get_db_connection
+from db import init_db, get_db_connection, log_request
 import requests
 import jmespath
 import json
@@ -348,6 +348,7 @@ def delete_command(cmd_id):
         return jsonify({'error': 'Internal error'}), 500
     finally:
         conn.close()
+        
     return redirect(url_for('commands'))
 
 @app.route('/edit_command/<int:cmd_id>', methods=['GET'])
@@ -429,6 +430,7 @@ def execute_script():
         try:
             resp = http_session.request(cmd['http_method'], url, headers=headers, params=params, data=body)
             status = resp.status_code
+            log_request(cmd['http_method'], url, body, status, resp.text)
             try:
                 resp_json = resp.json()
             except ValueError:
@@ -457,6 +459,16 @@ def get_results():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     return jsonify(session.get('results', []))
+
+
+@app.route('/request_logs')
+def view_request_logs():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    logs = conn.execute('SELECT * FROM request_logs ORDER BY ts DESC').fetchall()
+    conn.close()
+    return render_template('request_logs.html', logs=logs)
 
 if __name__ == '__main__':
     app.run(debug=True)
