@@ -289,7 +289,7 @@
     const cmdRegex = cmds.length ? new RegExp('\\b(' + cmds.join('|') + ')\\b', 'i') : /$^/;
     CodeMirror.defineSimpleMode('custom-cmd', {
       start: [
-        {regex: /\b(?:And|If|Not|Remote|Catch|Inparallel|Null|Try|Else|Is|Or|Finally|Like|Parallel|Raw)\b/, token: 'purple'},
+        {regex: /\b(?:And|If|Not|Remote|Catch|Inparallel|Null|Try|Else|Is|Or|Finally|Like|Parallel|Raw)\b/i, token: 'purple'},
         {regex: /[+\-*/%]/, token: 'red'},
         {regex: /\b(?:Select|From|Where|Group\s+by|Order\s+by|Join|On|Insert|Update|Delete)\b/i, token: 'dblue'},
         {regex: cmdRegex, token: 'lblue'}
