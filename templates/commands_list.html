@@ -5,7 +5,6 @@
       <span class="text-sm text-sub">[{{ cmd['http_method'] }}] {{ cmd['endpoint'] }}</span>
     </div>
     <div class="space-x-2">
-      <button hx-get="/edit_command/{{ cmd['id'] }}" hx-target="#main-command-form" hx-swap="outerHTML" class="bg-edit text-background px-2 py-1 rounded hover-cta">Edit</button>
       <button hx-post="/delete_command/{{ cmd['id'] }}" hx-swap="none" class="bg-delete text-main px-2 py-1 rounded hover-cta">Delete</button>
     </div>
   </div>
