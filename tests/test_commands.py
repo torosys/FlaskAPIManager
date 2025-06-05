@@ -54,3 +54,54 @@ def test_post_command_and_persist(client):
     conn.close()
     assert row is not None
 
+
+def test_duplicate_command_name_error(client):
+    data = {
+        'name': 'DupCmd',
+        'http_method': 'GET',
+        'endpoint': '/dup'
+    }
+    resp = client.post('/commands', data=data)
+    assert resp.status_code == 200
+
+    resp2 = client.post('/commands', data=data)
+    assert resp2.status_code == 200
+    assert b'A command with that name already exists.' in resp2.data
+
+    conn = db.get_db_connection()
+    count = conn.execute(
+        'SELECT COUNT(*) as c FROM commands WHERE name=?',
+        (data['name'],)
+    ).fetchone()['c']
+    conn.close()
+    assert count == 1
+
+
+def test_delete_command_removes_record(client):
+    data = {
+        'name': 'ToDelete',
+        'http_method': 'GET',
+        'endpoint': '/del'
+    }
+    resp = client.post('/commands', data=data)
+    assert resp.status_code == 200
+
+    conn = db.get_db_connection()
+    row = conn.execute(
+        'SELECT id FROM commands WHERE name=?',
+        (data['name'],)
+    ).fetchone()
+    conn.close()
+    assert row is not None
+
+    resp_del = client.post(f'/delete_command/{row["id"]}')
+    assert resp_del.status_code == 302
+
+    conn = db.get_db_connection()
+    deleted = conn.execute(
+        'SELECT id FROM commands WHERE id=?',
+        (row['id'],)
+    ).fetchone()
+    conn.close()
+    assert deleted is None
+
