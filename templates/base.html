@@ -8,15 +8,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #8A2BE2;
-            --secondary: #00F7FF;
-            --background: #0D0D0D;
-            --accent: #FF007F;
-            --hover-cta: #1F51FF;
-            --text-main: #F8F8FF;
-            --subtext: #555E66;
+            --primary: #0D6EFD;
+            --secondary: #5C6370;
+            --background: #121212;
+            --accent: #0DD3BB;
+            --hover-cta: #3F83F8;
+            --text-main: #E2E8F0;
+            --subtext: #A0AEC0;
         }
         .bg-primary { background-color: var(--primary); }
         .bg-secondary { background-color: var(--secondary); }
@@ -25,7 +27,7 @@
         .bg-edit { background-color: #B7A9FF; }
         .bg-delete { background-color: var(--accent); }
         .bg-update { background-color: var(--hover-cta); }
-        .gradient-execute { background-image: linear-gradient(90deg, #8A2BE2, #00F7FF); }
+        .gradient-execute { background-image: linear-gradient(90deg, var(--primary), var(--accent)); }
         .hover-cta:hover { background-color: var(--hover-cta); }
         .text-main { color: var(--text-main); }
         .text-sub { color: var(--subtext); }
@@ -34,7 +36,7 @@
         .text-background { color: var(--background); }
     </style>
 </head>
-<body class="font-sans" style="background-color: var(--background); color: var(--text-main);">
+<body class="font-sans" style="background-color: var(--background); color: var(--text-main); font-family: 'Inter', sans-serif;">
     {% block navbar %}
     <nav class="bg-primary text-main p-4 shadow-md">
         <div class="container mx-auto flex justify-between">
