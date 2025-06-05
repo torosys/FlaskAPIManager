@@ -223,7 +223,7 @@
   <div class="col-span-1 md:col-span-1">
     <div class="bg-primary text-main p-4 rounded shadow mb-4">
       <h3 class="text-lg font-semibold mb-2">Configure Command</h3>
-      <div hx-get="/commands?form_only=1" hx-trigger="load" hx-target="#main-command-form" hx-swap="outerHTML"></div>
+      <div hx-get="/commands/form" hx-trigger="load" hx-target="#main-command-form" hx-swap="outerHTML"></div>
       <div id="main-command-form"></div>
     </div>
   </div>
@@ -273,7 +273,7 @@
   });
 
   function initEditor() {
-    fetch('/commands?list_only=1')
+    fetch('/commands')
       .then(res => res.text())
       .then(txt => {
         const tmp = document.createElement('div');

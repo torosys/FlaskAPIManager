@@ -2,7 +2,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
   <h3 class="text-lg font-semibold mb-4">Edit Command: {{ cmd['name'] }}</h3>
-  <form method="post" action="/commands?list_only=1" hx-post="/commands?list_only=1" hx-target="#commands-list" hx-swap="outerHTML" hx-on="htmx:afterRequest: htmx.trigger(document.body, 'refreshForm')" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
+  <form method="post" action="/commands" hx-post="/commands" hx-target="#command-form" hx-swap="outerHTML" hx-on="htmx:afterRequest: htmx.trigger(document.body, 'refreshList')" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
     <input type="hidden" name="cmd_id" value="{{ cmd['id'] }}">
     <div class="flex space-x-2 items-center">
       <input type="text" name="name" value="{{ cmd['name'] }}" class="flex-1 border rounded px-2 py-1" required>
@@ -68,8 +68,8 @@
   </form>
 
   <!-- Command list loaded via HTMX -->
-  <div hx-get="/commands?list_only=1" hx-trigger="load" hx-target="#commands-list" hx-swap="outerHTML"></div>
-  <div hx-get="/commands?form_only=1&target=command-form" hx-trigger="refreshForm from:body" hx-target="#command-form" hx-swap="outerHTML" style="display:none"></div>
+  <div hx-get="/commands" hx-trigger="load,refreshList from:body" hx-target="#commands-list" hx-swap="outerHTML"></div>
+  <div hx-get="/commands/form?target=command-form" hx-trigger="load" hx-target="#command-form" hx-swap="outerHTML" style="display:none"></div>
   <div id="commands-list"></div>
 </div>
 
