@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">Request Logs</h2>
+<table class="min-w-full border">
+  <thead>
+    <tr>
+      <th class="border px-2 py-1">Time</th>
+      <th class="border px-2 py-1">Method</th>
+      <th class="border px-2 py-1">Endpoint</th>
+      <th class="border px-2 py-1">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for log in logs %}
+    <tr>
+      <td class="border px-2 py-1">{{ log['ts'] }}</td>
+      <td class="border px-2 py-1">{{ log['method'] }}</td>
+      <td class="border px-2 py-1">{{ log['endpoint'] }}</td>
+      <td class="border px-2 py-1">{{ log['status_code'] }}</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="border px-2 py-1">
+        <pre class="whitespace-pre-wrap">Request: {{ log['request_body'] }}
+Response: {{ log['response_body'] }}</pre>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

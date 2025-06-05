@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
-from db import init_db, get_db_connection
+from db import init_db, get_db_connection, log_request
 import requests
 import jmespath
 import json
@@ -268,6 +268,7 @@ def commands():
                     )
                 )
             conn.commit()
+            log_request('POST', '/commands', json.dumps(request.form.to_dict(flat=False)), 200, 'OK')
         except sqlite3.IntegrityError:
             error_msg = 'A command with that name already exists.'
         list_only = request.args.get('list_only') == '1' if hx else False
@@ -291,6 +292,7 @@ def delete_command(cmd_id):
     conn.execute('DELETE FROM commands WHERE id=?', (cmd_id,))
     conn.commit()
     conn.close()
+    log_request('POST', f'/delete_command/{cmd_id}', '', 200, 'OK')
     return redirect(url_for('commands'))
 
 @app.route('/edit_command/<int:cmd_id>', methods=['GET'])
@@ -352,6 +354,7 @@ def execute_script():
         try:
             resp = http_session.request(cmd['http_method'], url, headers=headers, params=params, data=body)
             status = resp.status_code
+            log_request(cmd['http_method'], url, body, status, resp.text)
             try:
                 resp_json = resp.json()
             except ValueError:
@@ -379,6 +382,16 @@ def get_results():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     return jsonify(session.get('results', []))
+
+
+@app.route('/request_logs')
+def view_request_logs():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    logs = conn.execute('SELECT * FROM request_logs ORDER BY ts DESC').fetchall()
+    conn.close()
+    return render_template('request_logs.html', logs=logs)
 
 if __name__ == '__main__':
     app.run(debug=True)
