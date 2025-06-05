@@ -1,14 +1,14 @@
 {# envs_list.html – only the list-of-environments portion #}
-<div id="envs-list" class="bg-white p-4 rounded shadow space-y-2">
+<div id="envs-list" class="bg-primary text-main p-4 rounded shadow space-y-2">
   {% for env in envs %}
     <div class="flex justify-between border-b pb-2 items-center flex-wrap">
       <div>
         <span class="font-semibold">{{ env['name'] }}</span>
-        <span class="text-sm text-gray-600">
+        <span class="text-sm text-sub">
           {{ env['base_url'] }}{% if env['port'] %}:{{ env['port'] }}{% endif %}
         </span>
         {% if env['is_default'] %}
-          <span class="ml-2 text-green-600 font-semibold">(Default)</span>
+          <span class="ml-2 text-secondary font-semibold">(Default)</span>
         {% endif %}
       </div>
       <div class="flex items-center space-x-2 mt-2 md:mt-0">
@@ -28,7 +28,7 @@
           hx-post="/delete_env/{{ env['id'] }}"
           hx-target="#envs-list"
           hx-swap="outerHTML"
-          class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
+          class="bg-delete text-main px-2 py-1 rounded hover-cta"
         >
           Delete
         </button>
