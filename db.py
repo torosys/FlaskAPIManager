@@ -1,5 +1,8 @@
 import sqlite3
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = Path(__file__).parent / 'app.db'
 
@@ -69,4 +72,5 @@ def init_db():
 
 if __name__ == '__main__':
     init_db()
-    print("Database initialized.")
+    logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+    logger.info('Database initialized.')
