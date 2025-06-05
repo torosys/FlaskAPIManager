@@ -222,6 +222,8 @@ def commands():
             conn.commit()
         except sqlite3.IntegrityError:
             error_msg = 'A command with that name already exists.'
+        list_only = request.args.get('list_only') == '1'
+        form_only = request.args.get('form_only') == '1'
     cmds = conn.execute('SELECT * FROM commands').fetchall()
     conn.close()
     if list_only:
