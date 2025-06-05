@@ -122,11 +122,14 @@ def envs():
             data = request.form
             env_id = data.get('env_id')
             is_default = 1 if data.get('is_default') == 'on' else 0
+            persist = 1 if data.get('persist') == 'on' else 0
+            username = None if persist else data.get('username')
+            password = None if persist else data.get('password')
             if env_id:
                 if is_default:
                     conn.execute('UPDATE environments SET is_default=0')
                 conn.execute(
-                    'UPDATE environments SET name=?, base_url=?, port=?, default_headers=?, default_params=?, auth_settings=?, meta=?, tags=?, is_default=? WHERE id=?',
+                    'UPDATE environments SET name=?, base_url=?, port=?, default_headers=?, default_params=?, auth_settings=?, meta=?, tags=?, username=?, password=?, persist=?, is_default=? WHERE id=?',
                     (
                         data['name'],
                         data['base_url'],
@@ -136,6 +139,9 @@ def envs():
                         data.get('auth_settings'),
                         data.get('meta'),
                         data.get('tags'),
+                        username,
+                        password,
+                        persist,
                         is_default,
                         env_id
                     )
@@ -144,7 +150,7 @@ def envs():
                 if is_default:
                     conn.execute('UPDATE environments SET is_default=0')
                 conn.execute(
-                    'INSERT INTO environments (name, base_url, port, default_headers, default_params, auth_settings, meta, tags, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO environments (name, base_url, port, default_headers, default_params, auth_settings, meta, tags, username, password, persist, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (
                         data['name'],
                         data['base_url'],
@@ -154,6 +160,9 @@ def envs():
                         data.get('auth_settings'),
                         data.get('meta'),
                         data.get('tags'),
+                        username,
+                        password,
+                        persist,
                         is_default
                     )
                 )

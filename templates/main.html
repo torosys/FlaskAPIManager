@@ -52,6 +52,29 @@
           placeholder="Port"
           class="w-20 border rounded px-2 py-1"
         >
+        <input
+          type="text"
+          name="username"
+          id="env_username"
+          placeholder="Username"
+          class="min-w-0 flex-1 border rounded px-2 py-1"
+        >
+        <input
+          type="password"
+          name="password"
+          id="env_password"
+          placeholder="Password"
+          class="min-w-0 flex-1 border rounded px-2 py-1"
+        >
+        <label class="inline-flex items-center ml-2">
+          <input
+            type="checkbox"
+            name="persist"
+            id="env_persist"
+            class="mr-1"
+          >
+          <span>Persist</span>
+        </label>
         <label class="inline-flex items-center ml-2">
           <input
             type="checkbox"
@@ -182,6 +205,18 @@
       document.addEventListener('DOMContentLoaded', function() {
         const gpFields = document.getElementById('global-params-fields');
         let gpCount = parseInt(gpFields.dataset.initialGpCount) + 1;
+
+        const persist = document.getElementById('env_persist');
+        const userField = document.getElementById('env_username');
+        const passField = document.getElementById('env_password');
+
+        function toggleCreds() {
+          const disable = persist.checked;
+          userField.disabled = disable;
+          passField.disabled = disable;
+        }
+        persist.addEventListener('change', toggleCreds);
+        toggleCreds();
 
         document.querySelector('#add-gparam').addEventListener('click', function() {
           const div = document.createElement('div');

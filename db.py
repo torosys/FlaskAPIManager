@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS environments (
     auth_settings TEXT,
     meta TEXT,
     tags TEXT,
+    username TEXT,
+    password TEXT,
+    persist INTEGER NOT NULL DEFAULT 0,
     is_default INTEGER NOT NULL DEFAULT 0
 );
 
