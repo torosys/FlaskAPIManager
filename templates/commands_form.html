@@ -1,4 +1,4 @@
-<form method="post" action="/commands?form_only=1" hx-post="/commands?form_only=1" hx-target="#main-command-form" hx-swap="outerHTML" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
+<form method="post" action="/commands?form_only=1" hx-post="/commands?form_only=1" hx-target="#{{ target|default('main-command-form') }}" hx-swap="outerHTML" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
   <input type="hidden" name="cmd_id" id="cmd_id">
   <div class="flex space-x-2 items-center flex-wrap">
     <input type="text" name="name" id="name" placeholder="Name" class="min-w-0 flex-1 border rounded px-2 py-1" required>

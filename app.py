@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
 from db import init_db, get_db_connection
 import requests
 import jmespath
@@ -229,6 +229,7 @@ def commands():
     hx = request.headers.get('HX-Request') == 'true'
     list_only = request.args.get('list_only') == '1' if hx else False
     form_only = request.args.get('form_only') == '1' if hx else False
+    target = request.args.get('target')
     conn = get_db_connection()
     error_msg = None
     if request.method == 'POST':
@@ -278,7 +279,8 @@ def commands():
     if list_only:
         return render_template('commands_list.html', commands=cmds)
     if form_only:
-        return render_template('commands_form.html', commands=cmds, error_msg=error_msg)
+        target_id = target or 'main-command-form'
+        return render_template('commands_form.html', commands=cmds, error_msg=error_msg, target=target_id)
     return render_template('commands.html', commands=cmds, error_msg=error_msg)
 
 @app.route('/delete_command/<int:cmd_id>', methods=['POST'])
