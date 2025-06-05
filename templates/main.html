@@ -304,6 +304,22 @@
         lineNumbers: true,
         mode: 'custom-cmd'
       });
+
+      let formatTimeout;
+      function formatBracketedSql() {
+        if (!window.sqlFormatter) return;
+        const src = window.editor.getValue();
+        const formatted = src.replace(/\[[^\]]+\]/g, m => '[' + sqlFormatter.format(m.slice(1, -1)) + ']');
+        if (formatted !== src) {
+          const cursor = window.editor.getCursor();
+          window.editor.setValue(formatted);
+          window.editor.setCursor(cursor);
+        }
+      }
+      window.editor.on('change', () => {
+        clearTimeout(formatTimeout);
+        formatTimeout = setTimeout(formatBracketedSql, 500);
+      });
     }
 
   document.getElementById('run-btn').addEventListener('click', function() {
