@@ -18,7 +18,8 @@
             name="is_default"
             {% if env['is_default'] %}checked{% endif %}
             hx-post="/toggle_default/{{ env['id'] }}"
-            hx-swap="none"
+            hx-target="#envs-list"
+            hx-swap="outerHTML"
             class="mr-2"
           >
           <span>Default</span>
