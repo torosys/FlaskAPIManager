@@ -273,7 +273,7 @@
   });
 
   function initEditor() {
-    fetch('/commands')
+    fetch('/commands?list_only=1')
       .then(res => res.text())
       .then(txt => {
         const tmp = document.createElement('div');

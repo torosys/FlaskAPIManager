@@ -273,6 +273,7 @@ def list_commands():
     if not is_logged_in():
         return redirect(url_for('login'))
     hx = request.headers.get('HX-Request') == 'true'
+    list_only = request.args.get('list_only') == '1'
     conn = get_db_connection()
     try:
         cmds = conn.execute('SELECT * FROM commands').fetchall()
@@ -282,9 +283,9 @@ def list_commands():
         return jsonify({'error': 'Internal error'}), 500
     finally:
         conn.close()
-    if not hx:
-        return render_template('commands.html')
-    return render_template('commands_list.html', commands=cmds)
+    if hx or list_only:
+        return render_template('commands_list.html', commands=cmds)
+    return render_template('commands_page.html', commands=cmds)
 
 @app.get('/commands/form')
 def command_form():
