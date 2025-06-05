@@ -24,16 +24,7 @@
           <span>Default</span>
         </label>
         <button
-          hx-get="/envs?list_only=1&edit_id={{ env['id'] }}"
-          hx-target="#envs-list"
-          hx-swap="outerHTML"
-          class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-400"
-        >
-          Edit
-        </button>
-        <button
           hx-post="/delete_env/{{ env['id'] }}"
-          hx-get="/envs?list_only=1"
           hx-target="#envs-list"
           hx-swap="outerHTML"
           class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
