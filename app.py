@@ -158,8 +158,9 @@ def toggle_default(env_id):
     conn.execute('UPDATE environments SET is_default=0')
     conn.execute('UPDATE environments SET is_default=1 WHERE id=?', (env_id,))
     conn.commit()
+    envs = conn.execute('SELECT * FROM environments').fetchall()
     conn.close()
-    return jsonify({'status': 'success'})
+    return render_template('envs_list.html', envs=envs)
 
 @app.route('/save_globals', methods=['POST'])
 def save_globals():
