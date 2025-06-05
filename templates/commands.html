@@ -1,6 +1,6 @@
 <div class="space-y-6">
   <!-- Command Configuration Form (Top-Center) -->
-  <form hx-post="/commands?list_only=1" hx-target="#commands-list" hx-swap="outerHTML" class="bg-primary text-main p-4 rounded shadow space-y-3" id="command-form">
+  <form method="post" hx-post="/commands?list_only=1" hx-target="#commands-list" hx-swap="outerHTML" class="bg-white p-4 rounded shadow space-y-3" id="command-form">
     <input type="hidden" name="cmd_id" id="cmd_id">
     <div class="flex space-x-2 items-center">
       <input type="text" name="name" id="name" placeholder="Name" class="flex-1 border rounded px-2 py-1" required>
