@@ -31,14 +31,22 @@ def login():
             'SELECT * FROM users WHERE username = ? AND password = ?',
             (username, password)
         ).fetchone()
-        conn.close()
         if user:
+            gp_rows = conn.execute(
+                'SELECT gkey, gvalue FROM global_params WHERE user_id = ?',
+                (user['id'],)
+            ).fetchall()
+            conn.close()
             session['username'] = username
-            session.pop('global_params', None)
+            gp_dict = {r['gkey']: r['gvalue'] for r in gp_rows}
+            session['global_params'] = {
+                'initial': gp_dict,
+                'current': gp_dict.copy()
+            }
             session.pop('results', None)
             return redirect(url_for('main'))
-        else:
-            return render_template('login.html', error='Invalid credentials')
+        conn.close()
+        return render_template('login.html', error='Invalid credentials')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -166,11 +174,30 @@ def toggle_default(env_id):
 def save_globals():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
+    conn = get_db_connection()
+    user = conn.execute('SELECT id FROM users WHERE username = ?', (session['username'],)).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({'error': 'User not found'}), 400
+    uid = user['id']
+    existing = {row['gkey'] for row in conn.execute('SELECT gkey FROM global_params WHERE user_id = ?', (uid,)).fetchall()}
     initial = {}
     for key, val in request.form.items():
         if key.startswith('gk_') and val.strip():
             idx = key.split('_')[1]
-            initial[val.strip()] = request.form.get(f'gv_{idx}', '').strip()
+            gkey = val.strip()
+            gvalue = request.form.get(f'gv_{idx}', '').strip()
+            initial[gkey] = gvalue
+            conn.execute(
+                'INSERT INTO global_params (user_id, gkey, gvalue) VALUES (?, ?, ?) '
+                'ON CONFLICT(user_id, gkey) DO UPDATE SET gvalue=excluded.gvalue',
+                (uid, gkey, gvalue)
+            )
+            existing.discard(gkey)
+    for obsolete in existing:
+        conn.execute('DELETE FROM global_params WHERE user_id = ? AND gkey = ?', (uid, obsolete))
+    conn.commit()
+    conn.close()
     session['global_params'] = {'initial': initial, 'current': initial.copy()}
     return jsonify({'status': 'success'})
 
