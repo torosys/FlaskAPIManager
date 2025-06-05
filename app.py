@@ -4,6 +4,14 @@ import requests
 import jmespath
 import json
 import sqlite3
+import logging
+
+logging.basicConfig(
+    filename='app.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = 'replace-with-a-secure-key'
@@ -27,25 +35,32 @@ def login():
         username = request.form['username']
         password = request.form['password']
         conn = get_db_connection()
-        user = conn.execute(
-            'SELECT * FROM users WHERE username = ? AND password = ?',
-            (username, password)
-        ).fetchone()
-        if user:
-            gp_rows = conn.execute(
-                'SELECT gkey, gvalue FROM global_params WHERE user_id = ?',
-                (user['id'],)
-            ).fetchall()
+        try:
+            user = conn.execute(
+                'SELECT * FROM users WHERE username = ? AND password = ?',
+                (username, password)
+            ).fetchone()
+            if user:
+                gp_rows = conn.execute(
+                    'SELECT gkey, gvalue FROM global_params WHERE user_id = ?',
+                    (user['id'],)
+                ).fetchall()
+                conn.close()
+                session['username'] = username
+                gp_dict = {r['gkey']: r['gvalue'] for r in gp_rows}
+                session['global_params'] = {
+                    'initial': gp_dict,
+                    'current': gp_dict.copy()
+                }
+                session.pop('results', None)
+                logger.info('User %s logged in', username)
+                return redirect(url_for('main'))
+            logger.info('Invalid login for %s', username)
+        except Exception:
+            logger.exception('Login failed for %s', username)
+            return render_template('login.html', error='Internal error'), 500
+        finally:
             conn.close()
-            session['username'] = username
-            gp_dict = {r['gkey']: r['gvalue'] for r in gp_rows}
-            session['global_params'] = {
-                'initial': gp_dict,
-                'current': gp_dict.copy()
-            }
-            session.pop('results', None)
-            return redirect(url_for('main'))
-        conn.close()
         return render_template('login.html', error='Invalid credentials')
     return render_template('login.html')
 
@@ -53,6 +68,7 @@ def login():
 def logout():
     session.clear()
     http_session.cookies.clear()
+    logger.info('User logged out')
     return redirect(url_for('login'))
 
 # ─── MAIN SPA ROUTE ─────────────────────────────────────────────────────────────
@@ -62,6 +78,7 @@ def main():
     if not is_logged_in():
         return redirect(url_for('login'))
     global_params = session.get('global_params', {'initial': {}, 'current': {}})
+    logger.info('Rendering main page for %s', session.get('username'))
     return render_template('main.html', global_params=global_params)
 
 # ─── AUTHENTICATE TO EXTERNAL ENDPOINT (CAPTURE COOKIE) ─────────────────────────
@@ -75,11 +92,14 @@ def auth_toggle():
     try:
         resp = http_session.get(auth_url, auth=(username, 'SUPER'))
         if resp.status_code == 200:
+            logger.info('Auth toggle succeeded for %s', username)
             return jsonify({'status': 'success'})
         else:
+            logger.error('Auth toggle failed for %s: %s', username, resp.text)
             return jsonify({'status': 'fail', 'message': resp.text}), 400
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except Exception:
+        logger.exception('Auth toggle error for %s', username)
+        return jsonify({'status': 'error', 'message': 'Internal error'}), 500
 
 # ─── ENVIRONMENTS ROUTE ─────────────────────────────────────────────────────────
 
@@ -91,56 +111,60 @@ def envs():
     # Check if HTMX requested only the list
     list_only = request.args.get('list_only') == '1'
     conn = get_db_connection()
-
-    # Handle POST to add/update environment; always return only envs_list.html
-    if request.method == 'POST':
-        data = request.form
-        env_id = data.get('env_id')
-        is_default = 1 if data.get('is_default') == 'on' else 0
-        if env_id:
-            if is_default:
-                conn.execute('UPDATE environments SET is_default=0')
-            conn.execute(
-                'UPDATE environments SET name=?, base_url=?, port=?, default_headers=?, default_params=?, auth_settings=?, meta=?, tags=?, is_default=? WHERE id=?',
-                (
-                    data['name'],
-                    data['base_url'],
-                    data.get('port'),
-                    data.get('default_headers'),
-                    data.get('default_params'),
-                    data.get('auth_settings'),
-                    data.get('meta'),
-                    data.get('tags'),
-                    is_default,
-                    env_id
+    try:
+        # Handle POST to add/update environment; always return only envs_list.html
+        if request.method == 'POST':
+            data = request.form
+            env_id = data.get('env_id')
+            is_default = 1 if data.get('is_default') == 'on' else 0
+            if env_id:
+                if is_default:
+                    conn.execute('UPDATE environments SET is_default=0')
+                conn.execute(
+                    'UPDATE environments SET name=?, base_url=?, port=?, default_headers=?, default_params=?, auth_settings=?, meta=?, tags=?, is_default=? WHERE id=?',
+                    (
+                        data['name'],
+                        data['base_url'],
+                        data.get('port'),
+                        data.get('default_headers'),
+                        data.get('default_params'),
+                        data.get('auth_settings'),
+                        data.get('meta'),
+                        data.get('tags'),
+                        is_default,
+                        env_id
+                    )
                 )
-            )
-        else:
-            if is_default:
-                conn.execute('UPDATE environments SET is_default=0')
-            conn.execute(
-                'INSERT INTO environments (name, base_url, port, default_headers, default_params, auth_settings, meta, tags, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (
-                    data['name'],
-                    data['base_url'],
-                    data.get('port'),
-                    data.get('default_headers'),
-                    data.get('default_params'),
-                    data.get('auth_settings'),
-                    data.get('meta'),
-                    data.get('tags'),
-                    is_default
+            else:
+                if is_default:
+                    conn.execute('UPDATE environments SET is_default=0')
+                conn.execute(
+                    'INSERT INTO environments (name, base_url, port, default_headers, default_params, auth_settings, meta, tags, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (
+                        data['name'],
+                        data['base_url'],
+                        data.get('port'),
+                        data.get('default_headers'),
+                        data.get('default_params'),
+                        data.get('auth_settings'),
+                        data.get('meta'),
+                        data.get('tags'),
+                        is_default
+                    )
                 )
-            )
-        conn.commit()
+            conn.commit()
 
+            envs = conn.execute('SELECT * FROM environments').fetchall()
+            logger.info('Environment %s saved', data['name'])
+            return render_template('envs_list.html', envs=envs)
+
+        # GET request: fetch environments
         envs = conn.execute('SELECT * FROM environments').fetchall()
+    except Exception:
+        logger.exception('Error processing environments')
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
         conn.close()
-        return render_template('envs_list.html', envs=envs)
-
-    # GET request: fetch environments
-    envs = conn.execute('SELECT * FROM environments').fetchall()
-    conn.close()
     if list_only:
         return render_template('envs_list.html', envs=envs)
 
@@ -152,10 +176,16 @@ def delete_env(env_id):
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     conn = get_db_connection()
-    conn.execute('DELETE FROM environments WHERE id=?', (env_id,))
-    conn.commit()
-    envs = conn.execute('SELECT * FROM environments').fetchall()
-    conn.close()
+    try:
+        conn.execute('DELETE FROM environments WHERE id=?', (env_id,))
+        conn.commit()
+        envs = conn.execute('SELECT * FROM environments').fetchall()
+        logger.info('Environment %s deleted', env_id)
+    except Exception:
+        logger.exception('Failed to delete environment %s', env_id)
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
     return render_template('envs_list.html', envs=envs)
 
 @app.route('/toggle_default/<int:env_id>', methods=['POST'])
@@ -163,11 +193,17 @@ def toggle_default(env_id):
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     conn = get_db_connection()
-    conn.execute('UPDATE environments SET is_default=0')
-    conn.execute('UPDATE environments SET is_default=1 WHERE id=?', (env_id,))
-    conn.commit()
-    envs = conn.execute('SELECT * FROM environments').fetchall()
-    conn.close()
+    try:
+        conn.execute('UPDATE environments SET is_default=0')
+        conn.execute('UPDATE environments SET is_default=1 WHERE id=?', (env_id,))
+        conn.commit()
+        envs = conn.execute('SELECT * FROM environments').fetchall()
+        logger.info('Environment %s set as default', env_id)
+    except Exception:
+        logger.exception('Failed to toggle default environment to %s', env_id)
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
     return render_template('envs_list.html', envs=envs)
 
 @app.route('/save_globals', methods=['POST'])
@@ -175,30 +211,35 @@ def save_globals():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     conn = get_db_connection()
-    user = conn.execute('SELECT id FROM users WHERE username = ?', (session['username'],)).fetchone()
-    if not user:
+    try:
+        user = conn.execute('SELECT id FROM users WHERE username = ?', (session['username'],)).fetchone()
+        if not user:
+            return jsonify({'error': 'User not found'}), 400
+        uid = user['id']
+        existing = {row['gkey'] for row in conn.execute('SELECT gkey FROM global_params WHERE user_id = ?', (uid,)).fetchall()}
+        initial = {}
+        for key, val in request.form.items():
+            if key.startswith('gk_') and val.strip():
+                idx = key.split('_')[1]
+                gkey = val.strip()
+                gvalue = request.form.get(f'gv_{idx}', '').strip()
+                initial[gkey] = gvalue
+                conn.execute(
+                    'INSERT INTO global_params (user_id, gkey, gvalue) VALUES (?, ?, ?) '
+                    'ON CONFLICT(user_id, gkey) DO UPDATE SET gvalue=excluded.gvalue',
+                    (uid, gkey, gvalue)
+                )
+                existing.discard(gkey)
+        for obsolete in existing:
+            conn.execute('DELETE FROM global_params WHERE user_id = ? AND gkey = ?', (uid, obsolete))
+        conn.commit()
+        session['global_params'] = {'initial': initial, 'current': initial.copy()}
+        logger.info('Global parameters saved for %s', session['username'])
+    except Exception:
+        logger.exception('Failed to save globals for %s', session.get('username'))
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
         conn.close()
-        return jsonify({'error': 'User not found'}), 400
-    uid = user['id']
-    existing = {row['gkey'] for row in conn.execute('SELECT gkey FROM global_params WHERE user_id = ?', (uid,)).fetchall()}
-    initial = {}
-    for key, val in request.form.items():
-        if key.startswith('gk_') and val.strip():
-            idx = key.split('_')[1]
-            gkey = val.strip()
-            gvalue = request.form.get(f'gv_{idx}', '').strip()
-            initial[gkey] = gvalue
-            conn.execute(
-                'INSERT INTO global_params (user_id, gkey, gvalue) VALUES (?, ?, ?) '
-                'ON CONFLICT(user_id, gkey) DO UPDATE SET gvalue=excluded.gvalue',
-                (uid, gkey, gvalue)
-            )
-            existing.discard(gkey)
-    for obsolete in existing:
-        conn.execute('DELETE FROM global_params WHERE user_id = ? AND gkey = ?', (uid, obsolete))
-    conn.commit()
-    conn.close()
-    session['global_params'] = {'initial': initial, 'current': initial.copy()}
     return jsonify({'status': 'success'})
 
 @app.route('/delete_global/<gkey>', methods=['POST'])
@@ -206,18 +247,23 @@ def delete_global(gkey):
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     conn = get_db_connection()
-    user = conn.execute('SELECT id FROM users WHERE username = ?', (session['username'],)).fetchone()
-    if not user:
+    try:
+        user = conn.execute('SELECT id FROM users WHERE username = ?', (session['username'],)).fetchone()
+        if not user:
+            return jsonify({'error': 'User not found'}), 400
+        uid = user['id']
+        conn.execute('DELETE FROM global_params WHERE user_id = ? AND gkey = ?', (uid, gkey))
+        conn.commit()
+        gp = session.get('global_params', {'initial': {}, 'current': {}})
+        gp.get('initial', {}).pop(gkey, None)
+        gp.get('current', {}).pop(gkey, None)
+        session['global_params'] = gp
+        logger.info('Global parameter %s deleted for %s', gkey, session['username'])
+    except Exception:
+        logger.exception('Failed to delete global %s for %s', gkey, session.get('username'))
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
         conn.close()
-        return jsonify({'error': 'User not found'}), 400
-    uid = user['id']
-    conn.execute('DELETE FROM global_params WHERE user_id = ? AND gkey = ?', (uid, gkey))
-    conn.commit()
-    conn.close()
-    gp = session.get('global_params', {'initial': {}, 'current': {}})
-    gp.get('initial', {}).pop(gkey, None)
-    gp.get('current', {}).pop(gkey, None)
-    session['global_params'] = gp
     return ('', 204)
 
 # ─── COMMANDS & EXECUTION ROUTES (UNCHANGED) ───────────────────────────────────
@@ -232,49 +278,53 @@ def commands():
     target = request.args.get('target')
     conn = get_db_connection()
     error_msg = None
-    if request.method == 'POST':
-        data = request.form
-        cmd_id = data.get('cmd_id')
-        headers_json = json.dumps([
-            {'key': k, 'value': v}
-            for k, v in zip(request.form.getlist('header_key'), request.form.getlist('header_val'))
-            if k
-        ])
-        params_json = json.dumps([
-            {'key': k, 'value': v}
-            for k, v in zip(request.form.getlist('param_key'), request.form.getlist('param_val'))
-            if k
-        ])
-        try:
-            if cmd_id:
-                conn.execute(
-                    'UPDATE commands SET name=?, http_method=?, endpoint=?, headers=?, params=?, auth_type=?, body_template=?, extract_rule=?, notes=? WHERE id=?',
-                    (
-                        data['name'], data['http_method'], data['endpoint'],
-                        headers_json, params_json,
-                        data.get('auth_type'), data.get('body_template'),
-                        data.get('extract_rule'), data.get('notes'),
-                        cmd_id
+    try:
+        if request.method == 'POST':
+            data = request.form
+            cmd_id = data.get('cmd_id')
+            headers_json = json.dumps([
+                {'key': k, 'value': v}
+                for k, v in zip(request.form.getlist('header_key'), request.form.getlist('header_val'))
+                if k
+            ])
+            params_json = json.dumps([
+                {'key': k, 'value': v}
+                for k, v in zip(request.form.getlist('param_key'), request.form.getlist('param_val'))
+                if k
+            ])
+            try:
+                if cmd_id:
+                    conn.execute(
+                        'UPDATE commands SET name=?, http_method=?, endpoint=?, headers=?, params=?, auth_type=?, body_template=?, extract_rule=?, notes=? WHERE id=?',
+                        (
+                            data['name'], data['http_method'], data['endpoint'],
+                            headers_json, params_json,
+                            data.get('auth_type'), data.get('body_template'),
+                            data.get('extract_rule'), data.get('notes'),
+                            cmd_id
+                        )
                     )
-                )
-            else:
-                conn.execute(
-                    'INSERT INTO commands (name, http_method, endpoint, headers, params, auth_type, body_template, extract_rule, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (
-                        data['name'], data['http_method'], data['endpoint'],
-                        headers_json, params_json,
-                        data.get('auth_type'), data.get('body_template'),
-                        data.get('extract_rule'), data.get('notes')
+                else:
+                    conn.execute(
+                        'INSERT INTO commands (name, http_method, endpoint, headers, params, auth_type, body_template, extract_rule, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        (
+                            data['name'], data['http_method'], data['endpoint'],
+                            headers_json, params_json,
+                            data.get('auth_type'), data.get('body_template'),
+                            data.get('extract_rule'), data.get('notes')
+                        )
                     )
-                )
-            conn.commit()
-            log_request('POST', '/commands', json.dumps(request.form.to_dict(flat=False)), 200, 'OK')
-        except sqlite3.IntegrityError:
-            error_msg = 'A command with that name already exists.'
-        list_only = request.args.get('list_only') == '1' if hx else False
-        form_only = request.args.get('form_only') == '1' if hx else False
-    cmds = conn.execute('SELECT * FROM commands').fetchall()
-    conn.close()
+                conn.commit()
+                logger.info('Command %s saved', data['name'])
+            except sqlite3.IntegrityError:
+                error_msg = 'A command with that name already exists.'
+        cmds = conn.execute('SELECT * FROM commands').fetchall()
+    except Exception:
+        logger.exception('Error processing commands')
+        conn.close()
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
     if not hx:
         return render_template('commands.html', commands=cmds, error_msg=error_msg)
     if list_only:
@@ -289,10 +339,16 @@ def delete_command(cmd_id):
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     conn = get_db_connection()
-    conn.execute('DELETE FROM commands WHERE id=?', (cmd_id,))
-    conn.commit()
-    conn.close()
-    log_request('POST', f'/delete_command/{cmd_id}', '', 200, 'OK')
+    try:
+        conn.execute('DELETE FROM commands WHERE id=?', (cmd_id,))
+        conn.commit()
+        logger.info('Command %s deleted', cmd_id)
+    except Exception:
+        logger.exception('Failed to delete command %s', cmd_id)
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
+        
     return redirect(url_for('commands'))
 
 @app.route('/edit_command/<int:cmd_id>', methods=['GET'])
@@ -300,12 +356,19 @@ def edit_command(cmd_id):
     if not is_logged_in():
         return redirect(url_for('login'))
     conn = get_db_connection()
-    cmd = conn.execute('SELECT * FROM commands WHERE id = ?', (cmd_id,)).fetchone()
-    conn.close()
+    try:
+        cmd = conn.execute('SELECT * FROM commands WHERE id = ?', (cmd_id,)).fetchone()
+    except Exception:
+        conn.close()
+        logger.exception('Failed to fetch command %s', cmd_id)
+        return redirect(url_for('commands'))
+    finally:
+        conn.close()
     if not cmd:
         return redirect(url_for('commands'))
     headers_list = json.loads(cmd['headers'] or '[]')
     params_list = json.loads(cmd['params'] or '[]')
+    logger.info('Editing command %s', cmd['name'])
     return render_template('edit_command.html', cmd=cmd, headers=headers_list, params=params_list)
 
 @app.route('/execute', methods=['POST'])
@@ -319,9 +382,15 @@ def execute_script():
     log_entries = []
     results = []
     conn = get_db_connection()
-    env = (conn.execute('SELECT * FROM environments WHERE is_default=1 LIMIT 1').fetchone()
-         or conn.execute('SELECT * FROM environments LIMIT 1').fetchone())
-    conn.close()
+    try:
+        env = (conn.execute('SELECT * FROM environments WHERE is_default=1 LIMIT 1').fetchone()
+             or conn.execute('SELECT * FROM environments LIMIT 1').fetchone())
+    except Exception:
+        logger.exception('Failed fetching environment')
+        conn.close()
+        return jsonify({'error': 'Internal error'}), 500
+    finally:
+        conn.close()
     base = ''
     if env:
         base = env['base_url'] + (f":{env['port']}" if env['port'] else '')
@@ -330,8 +399,15 @@ def execute_script():
             continue
         cmd_name = line
         conn = get_db_connection()
-        cmd = conn.execute('SELECT * FROM commands WHERE name = ?', (cmd_name,)).fetchone()
-        conn.close()
+        try:
+            cmd = conn.execute('SELECT * FROM commands WHERE name = ?', (cmd_name,)).fetchone()
+        except Exception:
+            conn.close()
+            logger.exception('Failed to fetch command %s', cmd_name)
+            log_entries.append({'type': 'error', 'message': f'Command lookup failed: {cmd_name}'})
+            break
+        finally:
+            conn.close()
         if not cmd:
             log_entries.append({'type': 'error', 'message': f'Command not found: {cmd_name}'})
             break
@@ -372,6 +448,7 @@ def execute_script():
                     gp['current'][var_name] = str(extracted)
                     session['global_params'] = gp
         except Exception as e:
+            logger.exception('%s execution failed', cmd_name)
             log_entries.append({'type': 'error', 'message': f'{cmd_name} exception: {str(e)}'})
             break
     session['results'] = results
