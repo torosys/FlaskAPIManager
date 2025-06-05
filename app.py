@@ -310,6 +310,14 @@ def list_commands():
     return render_template('commands_list.html', commands=cmds)
 
 
+@app.get('/commands/dropdown')
+def commands_dropdown():
+    """Return the search + list partial for commands."""
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    return render_template('commands_dropdown.html')
+
+
 @app.get('/commands/form')
 def command_form():
     if not is_logged_in():
@@ -372,7 +380,12 @@ def delete_command(cmd_id):
         return jsonify({'error': 'Internal error'}), 500
     finally:
         conn.close()
-        
+
+    if request.headers.get('HX-Request'):
+        conn = get_db_connection()
+        cmds = conn.execute('SELECT * FROM commands ORDER BY name').fetchall()
+        conn.close()
+        return render_template('commands_list.html', commands=cmds)
     return redirect(url_for('commands_page'))
 
 
