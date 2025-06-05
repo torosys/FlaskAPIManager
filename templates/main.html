@@ -28,62 +28,72 @@
       class="bg-primary text-main p-4 rounded shadow space-y-3"
     >
       <input type="hidden" name="env_id" id="env_id">
-      <div class="flex space-x-2 items-center flex-wrap">
-        <input
-          type="text"
-          name="name"
-          id="env_name"
-          placeholder="Name"
-          class="min-w-0 flex-1 border rounded px-2 py-1"
-          required
-        >
-        <input
-          type="text"
-          name="base_url"
-          id="env_base_url"
-          placeholder="Base URL"
-          class="min-w-0 flex-1 border rounded px-2 py-1"
-          required
-        >
-        <input
-          type="number"
-          name="port"
-          id="env_port"
-          placeholder="Port"
-          class="w-20 border rounded px-2 py-1"
-        >
-        <input
-          type="text"
-          name="username"
-          id="env_username"
-          placeholder="Username"
-          class="min-w-0 flex-1 border rounded px-2 py-1"
-        >
-        <input
-          type="password"
-          name="password"
-          id="env_password"
-          placeholder="Password"
-          class="min-w-0 flex-1 border rounded px-2 py-1"
-        >
-        <label class="inline-flex items-center ml-2">
+      <div class="mb-2 space-x-2">
+        <button type="button" class="tab-btn bg-secondary text-background px-3 py-1 rounded" data-tab="general">General</button>
+        <button type="button" class="tab-btn px-3 py-1 rounded" data-tab="auth">Auth</button>
+      </div>
+      <div id="tab-general" class="tab-content">
+        <div class="flex space-x-2 items-center flex-wrap">
           <input
-            type="checkbox"
-            name="persist"
-            id="env_persist"
-            class="mr-1"
+            type="text"
+            name="name"
+            id="env_name"
+            placeholder="Name"
+            class="min-w-0 flex-1 border rounded px-2 py-1"
+            required
           >
-          <span>Persist</span>
-        </label>
-        <label class="inline-flex items-center ml-2">
           <input
-            type="checkbox"
-            name="is_default"
-            id="env_is_default"
-            class="mr-1"
+            type="text"
+            name="base_url"
+            id="env_base_url"
+            placeholder="Base URL"
+            class="min-w-0 flex-1 border rounded px-2 py-1"
+            required
           >
-          <span>Default</span>
-        </label>
+          <input
+            type="number"
+            name="port"
+            id="env_port"
+            placeholder="Port"
+            class="w-20 border rounded px-2 py-1"
+          >
+          <label class="inline-flex items-center ml-2">
+            <input
+              type="checkbox"
+              name="is_default"
+              id="env_is_default"
+              class="mr-1"
+            >
+            <span>Default</span>
+          </label>
+        </div>
+      </div>
+      <div id="tab-auth" class="tab-content hidden">
+        <div class="flex space-x-2 items-center flex-wrap">
+          <input
+            type="text"
+            name="username"
+            id="env_username"
+            placeholder="Username"
+            class="min-w-0 flex-1 border rounded px-2 py-1"
+          >
+          <input
+            type="password"
+            name="password"
+            id="env_password"
+            placeholder="Password"
+            class="min-w-0 flex-1 border rounded px-2 py-1"
+          >
+          <label class="inline-flex items-center ml-2">
+            <input
+              type="checkbox"
+              name="persist"
+              id="env_persist"
+              class="mr-1"
+            >
+            <span>Persist</span>
+          </label>
+        </div>
       </div>
       <div class="flex space-x-2 mt-2">
         <button
@@ -205,6 +215,17 @@
       document.addEventListener('DOMContentLoaded', function() {
         const gpFields = document.getElementById('global-params-fields');
         let gpCount = parseInt(gpFields.dataset.initialGpCount) + 1;
+
+        // Tab switching logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const target = this.dataset.tab;
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('tab-' + target).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-secondary', 'text-background'));
+            this.classList.add('bg-secondary', 'text-background');
+          });
+        });
 
         const persist = document.getElementById('env_persist');
         const userField = document.getElementById('env_username');

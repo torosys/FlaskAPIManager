@@ -10,6 +10,11 @@
         {% if env['is_default'] %}
           <span class="ml-2 text-secondary font-semibold">(Default)</span>
         {% endif %}
+        {% if env['username'] %}
+          <div class="text-sm">Auth: {{ env['username'] }}</div>
+        {% elif env['persist'] %}
+          <div class="text-sm">Auth: persisted</div>
+        {% endif %}
       </div>
       <div class="flex items-center space-x-2 mt-2 md:mt-0">
         <label class="inline-flex items-center">
