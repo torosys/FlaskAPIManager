@@ -345,7 +345,12 @@ def save_command():
     finally:
         conn.close()
     target = request.args.get('target') or 'main-command-form'
-    return render_template('commands_form.html', error_msg=error_msg, target=target)
+    resp = make_response(
+        render_template('commands_form.html', error_msg=error_msg, target=target)
+    )
+    if error_msg is None:
+        resp.headers['HX-Trigger'] = 'refreshList'
+    return resp
 
 @app.route('/delete_command/<int:cmd_id>', methods=['POST'])
 def delete_command(cmd_id):
