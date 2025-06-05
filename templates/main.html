@@ -123,6 +123,8 @@
               >
               <button
                 type="button"
+                hx-post="/delete_global/{{ key }}"
+                hx-swap="none"
                 onclick="document.getElementById('gp-field-{{ idx }}').remove();"
                 class="text-red-500 hover:text-red-700"
               >
