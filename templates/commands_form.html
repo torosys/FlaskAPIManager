@@ -100,4 +100,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', initCommandForm);
+  if (document.readyState !== 'loading') {
+    initCommandForm();
+  }
 </script>
