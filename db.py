@@ -37,6 +37,15 @@ CREATE TABLE IF NOT EXISTS commands (
     extract_rule TEXT,
     notes TEXT
 );
+
+CREATE TABLE IF NOT EXISTS global_params (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    gkey TEXT NOT NULL,
+    gvalue TEXT,
+    UNIQUE(user_id, gkey),
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 '''
 
 
