@@ -8,17 +8,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #7c79c6;
+            --primary: #F2F2F2;
             --secondary: #96c6dd;
-            --background: #f5f6fb;
-            --accent: #7bae76;
-            --hover-cta: #6e9c69;
-            --text-main: #211e53;
-            --subtext: #46419e;
+            --background: #F9FAFC;
+            --accent: #EBCCEA;
+            --hover-cta: #D8BBD8;
+            --text-main: #211E53;
+            --subtext: #6B6B8B;
         }
         .bg-primary { background-color: var(--primary); }
         .bg-secondary { background-color: var(--secondary); }
@@ -27,7 +27,7 @@
         .bg-edit { background-color: #B7A9FF; }
         .bg-delete { background-color: var(--accent); }
         .bg-update { background-color: var(--hover-cta); }
-        .gradient-execute { background-image: linear-gradient(90deg, var(--primary), var(--accent)); }
+        .gradient-execute { background-image: linear-gradient(90deg, var(--accent), var(--hover-cta)); }
         .hover-cta:hover { background-color: var(--hover-cta); }
         .text-main { color: var(--text-main); }
         .text-sub { color: var(--subtext); }
@@ -41,7 +41,7 @@
         }
 
         input, textarea, select {
-            font-family: monospace;
+            font-family: 'JetBrains Mono', monospace;
         }
     </style>
 </head>
