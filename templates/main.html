@@ -309,8 +309,19 @@
   </div>
   <div class="bg-primary text-main p-4 rounded shadow">
     <h3 class="text-lg font-semibold mb-2">API Responses</h3>
+    <div class="mb-2 space-x-2">
+      <button type="button" id="json-tab" class="tab-btn bg-secondary text-background px-3 py-1 rounded" data-tab="json">JSON</button>
+      <button type="button" id="table-tab" class="tab-btn px-3 py-1 rounded" data-tab="table">Table</button>
+      <a href="/export_results?format=csv" id="export-csv" class="px-2 py-1 bg-accent text-main rounded hidden" download>Export CSV</a>
+      <a href="/export_results?format=xlsx" id="export-xlsx" class="px-2 py-1 bg-accent text-main rounded hidden" download>Export XLSX</a>
+    </div>
     <input type="text" id="search-input" placeholder="Search in responses..." class="w-full border rounded px-2 py-1 mb-3">
-    <div id="results-container" class="space-y-4"></div>
+    <div id="tab-json" class="tab-content">
+      <div id="results-container" class="space-y-4"></div>
+    </div>
+    <div id="tab-table" class="tab-content hidden overflow-auto">
+      <table id="results-table" class="table-auto border-collapse text-sm"></table>
+    </div>
   </div>
 </div>
 
@@ -423,6 +434,10 @@
       .then(data => renderResults(data));
   }
   function renderResults(data) {
+    renderJson(data);
+    renderTable(data);
+  }
+  function renderJson(data) {
     const container = document.getElementById('results-container');
     container.innerHTML = '';
     data.forEach(item => {
@@ -432,10 +447,79 @@
       container.appendChild(div);
     });
   }
+
+  function flattenObject(obj, prefix = '') {
+    let out = {};
+    if (Array.isArray(obj)) {
+      obj.forEach((v, i) => {
+        Object.assign(out, flattenObject(v, `${prefix}${i}.`));
+      });
+    } else if (obj !== null && typeof obj === 'object') {
+      Object.entries(obj).forEach(([k, v]) => {
+        Object.assign(out, flattenObject(v, `${prefix}${k}.`));
+      });
+    } else {
+      out[prefix.slice(0, -1)] = obj;
+    }
+    return out;
+  }
+
+  function renderTable(data) {
+    const table = document.getElementById('results-table');
+    table.innerHTML = '';
+    const rows = [];
+    const headersSet = new Set(['command']);
+    data.forEach(item => {
+      const flat = typeof item.response === 'object' ? flattenObject(item.response) : { response: item.response };
+      flat['command'] = item.command;
+      rows.push(flat);
+      Object.keys(flat).forEach(k => headersSet.add(k));
+    });
+    const headers = Array.from(headersSet);
+    const thead = document.createElement('thead');
+    const hRow = document.createElement('tr');
+    headers.forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      th.className = 'border px-2 py-1';
+      hRow.appendChild(th);
+    });
+    thead.appendChild(hRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      headers.forEach(h => {
+        const td = document.createElement('td');
+        td.textContent = r[h] !== undefined ? r[h] : '';
+        td.className = 'border px-2 py-1';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+  }
+
   document.getElementById('search-input').addEventListener('input', function() {
     const term = this.value.toLowerCase();
     document.querySelectorAll('#results-container div').forEach(div => {
       div.style.display = div.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+    document.querySelectorAll('#results-table tbody tr').forEach(tr => {
+      tr.style.display = tr.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+  });
+
+  document.querySelectorAll('#json-tab, #table-tab').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const target = this.dataset.tab;
+      document.querySelectorAll('#tab-json, #tab-table').forEach(c => c.classList.add('hidden'));
+      document.getElementById('tab-' + target).classList.remove('hidden');
+      document.querySelectorAll('#json-tab, #table-tab').forEach(b => b.classList.remove('bg-secondary', 'text-background'));
+      this.classList.add('bg-secondary', 'text-background');
+      const showExport = target === 'table';
+      document.getElementById('export-csv').classList.toggle('hidden', !showExport);
+      document.getElementById('export-xlsx').classList.toggle('hidden', !showExport);
     });
   });
 </script>
