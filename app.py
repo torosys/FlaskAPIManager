@@ -52,6 +52,7 @@ def login():
                 ).fetchall()
                 conn.close()
                 session['username'] = username
+                session['user_password'] = password
                 gp_dict = {r['gkey']: r['gvalue'] for r in gp_rows}
                 session['global_params'] = {
                     'initial': gp_dict,
@@ -71,6 +72,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    session.pop('user_password', None)
     session.clear()
     http_session.cookies.clear()
     logger.info('User logged out')
@@ -109,7 +111,7 @@ def auth_toggle():
 
     base = ''
     usr_id = session.get('username')
-    password = session.get('password')
+    password = session.get('user_password')
     if env:
         base = env['base_url'] + (f":{env['port']}" if env['port'] else '')
         if env['username'] is not None:
