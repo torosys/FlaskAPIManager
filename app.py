@@ -92,18 +92,43 @@ def main():
 def auth_toggle():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
-    auth_url = request.form.get('auth_url', '')
-    username = session['username']
+    conn = get_db_connection()
     try:
-        resp = http_session.get(auth_url, auth=(username, 'SUPER'))
+        env = (
+            conn.execute(
+                'SELECT * FROM environments WHERE is_default=1 LIMIT 1'
+            ).fetchone()
+            or conn.execute('SELECT * FROM environments LIMIT 1').fetchone()
+        )
+    except Exception:
+        logger.exception('Failed fetching environment for auth')
+        conn.close()
+        return jsonify({'status': 'error', 'message': 'Internal error'}), 500
+    finally:
+        conn.close()
+
+    base = ''
+    usr_id = session.get('username')
+    password = session.get('password')
+    if env:
+        base = env['base_url'] + (f":{env['port']}" if env['port'] else '')
+        if env['username'] is not None:
+            usr_id = env['username']
+        if env['password'] is not None:
+            password = env['password']
+
+    auth_url = f"{base.rstrip('/')}/ws/auth/login?usr_id={usr_id}&password={password}"
+
+    try:
+        resp = http_session.get(auth_url)
         if resp.status_code == 200:
-            logger.info('Auth toggle succeeded for %s', username)
+            logger.info('Auth toggle succeeded for %s', usr_id)
             return jsonify({'status': 'success'})
         else:
-            logger.error('Auth toggle failed for %s: %s', username, resp.text)
+            logger.error('Auth toggle failed for %s: %s', usr_id, resp.text)
             return jsonify({'status': 'fail', 'message': resp.text}), 400
     except Exception:
-        logger.exception('Auth toggle error for %s', username)
+        logger.exception('Auth toggle error for %s', usr_id)
         return jsonify({'status': 'error', 'message': 'Internal error'}), 500
 
 # ─── ENVIRONMENTS ROUTE ─────────────────────────────────────────────────────────
