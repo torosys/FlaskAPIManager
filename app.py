@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
+import io
+import csv
 from db import init_db, get_db_connection, log_request
 import requests
 import jmespath
@@ -524,6 +526,59 @@ def get_results():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     return jsonify(session.get('results', []))
+
+
+def _flatten_json(obj, prefix=''):
+    flat = {}
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            flat.update(_flatten_json(v, f"{prefix}{k}."))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            flat.update(_flatten_json(v, f"{prefix}{i}."))
+    else:
+        flat[prefix[:-1]] = obj
+    return flat
+
+
+@app.route('/export_results')
+def export_results():
+    if not is_logged_in():
+        return jsonify({'error': 'Not logged in'}), 401
+    fmt = request.args.get('format', 'csv')
+    results = session.get('results', [])
+    rows = []
+    headers = set()
+    for item in results:
+        flat = _flatten_json(item.get('response')) if isinstance(item.get('response'), (dict, list)) else {'response': item.get('response')}
+        flat['command'] = item.get('command')
+        rows.append(flat)
+        headers.update(flat.keys())
+    headers = ['command'] + sorted(h for h in headers if h != 'command')
+    if fmt == 'xlsx':
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.append(headers)
+        for row in rows:
+            ws.append([row.get(h, '') for h in headers])
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        resp = make_response(output.read())
+        resp.headers['Content-Disposition'] = 'attachment; filename=results.xlsx'
+        resp.mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        return resp
+    else:
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=headers)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({h: row.get(h, '') for h in headers})
+        resp = make_response(output.getvalue())
+        resp.headers['Content-Disposition'] = 'attachment; filename=results.csv'
+        resp.mimetype = 'text/csv'
+        return resp
 
 
 @app.route('/request_logs')
