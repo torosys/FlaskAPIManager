@@ -26,3 +26,19 @@ def test_logout_removes_password(client):
     with client.session_transaction() as sess:
         assert 'user_password' not in sess
 
+
+def test_auth_cookie_endpoint(client):
+    from app import http_session
+    http_session.cookies.set('MOCA-WS-SESSIONKEY', 'cookie123')
+    # Not logged in should give 401
+    resp = client.get('/auth_cookie')
+    assert resp.status_code == 401
+
+    with client.session_transaction() as sess:
+        sess['username'] = 'SUPER'
+
+    resp2 = client.get('/auth_cookie')
+    assert resp2.status_code == 200
+    assert resp2.get_json()['cookie'] == 'cookie123'
+    http_session.cookies.clear()
+

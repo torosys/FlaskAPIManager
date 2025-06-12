@@ -7,15 +7,18 @@
   <!-- Authentication Toggle -->
   <div class="flex items-center justify-between mb-2">
     <h3 class="text-lg font-semibold">Environments</h3>
-    <button
-      id="auth-btn"
-      hx-post="/auth_toggle"
-      hx-trigger="click"
-      hx-swap="none"
-      class="bg-auth text-background px-3 py-1 rounded hover-cta"
-    >
-      Authenticate
-    </button>
+    <div class="flex items-center space-x-2">
+      <button
+        id="auth-btn"
+        hx-post="/auth_toggle"
+        hx-trigger="click"
+        hx-swap="none"
+        class="bg-auth text-background px-3 py-1 rounded hover-cta"
+      >
+        Authenticate
+      </button>
+      <button id="copy-cookie-btn" class="hover-text-cta" title="Copy cookie" type="button">📋</button>
+    </div>
   </div>
 
   <!-- Add Environment Form -->
@@ -210,6 +213,19 @@
   document.addEventListener('DOMContentLoaded', function() {
     const gpFields = document.getElementById('global-params-fields');
     let gpCount = parseInt(gpFields.dataset.initialGpCount) + 1;
+
+    const cookieBtn = document.getElementById('copy-cookie-btn');
+    if (cookieBtn) {
+      cookieBtn.addEventListener('click', function() {
+        fetch('/auth_cookie')
+          .then(res => res.json())
+          .then(data => {
+            if (data.cookie) {
+              navigator.clipboard.writeText(data.cookie);
+            }
+          });
+      });
+    }
 
     // Tab switching logic
     document.querySelectorAll('.tab-btn').forEach(btn => {
