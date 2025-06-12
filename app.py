@@ -443,7 +443,7 @@ def execute_script():
     if not is_logged_in():
         return jsonify({'error': 'Not logged in'}), 401
     script = request.form['script']
-    lines = [line.strip() for line in script.splitlines() if line.strip()]
+    lines = [line.strip() for line in script.splitlines()]
     gp = session.get('global_params', {'initial': {}, 'current': {}})
     stack_vars = gp.get('current', {}).copy()
     log_entries = []
@@ -461,62 +461,71 @@ def execute_script():
     base = ''
     if env:
         base = env['base_url'] + (f":{env['port']}" if env['port'] else '')
+    abort = False
     for line in lines:
-        if line.lower().startswith('catch'):
+        tokens = [t.strip() for t in line.split('|') if t.strip() and t.strip() != '|']
+        if not tokens:
             continue
-        cmd_name = line
-        conn = get_db_connection()
-        try:
-            cmd = conn.execute('SELECT * FROM commands WHERE name = ?', (cmd_name,)).fetchone()
-        except Exception:
-            conn.close()
-            logger.exception('Failed to fetch command %s', cmd_name)
-            log_entries.append({'type': 'error', 'message': f'Command lookup failed: {cmd_name}'})
-            break
-        finally:
-            conn.close()
-        if not cmd:
-            log_entries.append({'type': 'error', 'message': f'Command not found: {cmd_name}'})
-            break
-        url = base.rstrip('/') + '/' + cmd['endpoint'].lstrip('/') if base else cmd['endpoint']
-        headers_list = json.loads(cmd['headers'] or '[]')
-        headers = {h['key']: h['value'] for h in headers_list}
-        params_list = json.loads(cmd['params'] or '[]')
-        params = {p['key']: p['value'] for p in params_list}
-        body = cmd['body_template'] or ''
-        for var, val in stack_vars.items():
-            placeholder = f'{{{{{var}}}}}'
-            url = url.replace(placeholder, val)
-            body = body.replace(placeholder, val)
-            headers = {k: v.replace(placeholder, val) for k, v in headers.items()}
-            params = {k: v.replace(placeholder, val) for k, v in params.items()}
-        log_entries.append({
-            'type': 'info',
-            'message': f"REQUEST {cmd_name}: {cmd['http_method']} {url}\nHeaders: {json.dumps(headers)}\nParams: {json.dumps(params)}\nBody: {body}"
-        })
-        try:
-            resp = http_session.request(cmd['http_method'], url, headers=headers, params=params, data=body)
-            status = resp.status_code
-            log_request(cmd['http_method'], url, body, status, resp.text)
+        for cmd_name in tokens:
+            if cmd_name.lower().startswith('catch'):
+                continue
+            conn = get_db_connection()
             try:
-                resp_json = resp.json()
-            except ValueError:
-                resp_json = {'raw': resp.text}
+                cmd = conn.execute('SELECT * FROM commands WHERE name = ?', (cmd_name,)).fetchone()
+            except Exception:
+                conn.close()
+                logger.exception('Failed to fetch command %s', cmd_name)
+                log_entries.append({'type': 'error', 'message': f'Command lookup failed: {cmd_name}'})
+                abort = True
+                break
+            finally:
+                conn.close()
+            if not cmd:
+                log_entries.append({'type': 'error', 'message': f'Command not found: {cmd_name}'})
+                abort = True
+                break
+            url = base.rstrip('/') + '/' + cmd['endpoint'].lstrip('/') if base else cmd['endpoint']
+            headers_list = json.loads(cmd['headers'] or '[]')
+            headers = {h['key']: h['value'] for h in headers_list}
+            params_list = json.loads(cmd['params'] or '[]')
+            params = {p['key']: p['value'] for p in params_list}
+            body = cmd['body_template'] or ''
+            for var, val in stack_vars.items():
+                placeholder = f'{{{{{var}}}}}'
+                url = url.replace(placeholder, val)
+                body = body.replace(placeholder, val)
+                headers = {k: v.replace(placeholder, val) for k, v in headers.items()}
+                params = {k: v.replace(placeholder, val) for k, v in params.items()}
             log_entries.append({
                 'type': 'info',
-                'message': f"RESPONSE {cmd_name}: {status}\n{json.dumps(resp_json, indent=2)}"
+                'message': f"REQUEST {cmd_name}: {cmd['http_method']} {url}\nHeaders: {json.dumps(headers)}\nParams: {json.dumps(params)}\nBody: {body}"
             })
-            results.append({'command': cmd_name, 'response': resp_json})
-            if cmd['extract_rule'] and isinstance(resp_json, (dict, list)):
-                extracted = jmespath.search(cmd['extract_rule'], resp_json)
-                if extracted is not None:
-                    var_name = cmd['extract_rule'].split('.')[-1]
-                    stack_vars[var_name] = str(extracted)
-                    gp['current'][var_name] = str(extracted)
-                    session['global_params'] = gp
-        except Exception as e:
-            logger.exception('%s execution failed', cmd_name)
-            log_entries.append({'type': 'error', 'message': f'{cmd_name} exception: {str(e)}'})
+            try:
+                resp = http_session.request(cmd['http_method'], url, headers=headers, params=params, data=body)
+                status = resp.status_code
+                log_request(cmd['http_method'], url, body, status, resp.text)
+                try:
+                    resp_json = resp.json()
+                except ValueError:
+                    resp_json = {'raw': resp.text}
+                log_entries.append({
+                    'type': 'info',
+                    'message': f"RESPONSE {cmd_name}: {status}\n{json.dumps(resp_json, indent=2)}"
+                })
+                results.append({'command': cmd_name, 'response': resp_json})
+                if cmd['extract_rule'] and isinstance(resp_json, (dict, list)):
+                    extracted = jmespath.search(cmd['extract_rule'], resp_json)
+                    if extracted is not None:
+                        var_name = cmd['extract_rule'].split('.')[-1]
+                        stack_vars[var_name] = str(extracted)
+                        gp['current'][var_name] = str(extracted)
+                        session['global_params'] = gp
+            except Exception as e:
+                logger.exception('%s execution failed', cmd_name)
+                log_entries.append({'type': 'error', 'message': f'{cmd_name} exception: {str(e)}'})
+                abort = True
+                break
+        if abort:
             break
     session['results'] = results
     return render_template('logs.html', logs=log_entries)
