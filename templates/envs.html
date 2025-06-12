@@ -10,7 +10,6 @@
     <button
       id="auth-btn"
       hx-post="/auth_toggle"
-      hx-include="[name=auth_url]"
       hx-trigger="click"
       hx-swap="none"
       class="bg-auth text-background px-3 py-1 rounded hover-cta"
@@ -18,7 +17,6 @@
       Authenticate
     </button>
   </div>
-  <input type="hidden" name="auth_url" value="https://example.com/login">
 
   <!-- Add Environment Form -->
   <form
