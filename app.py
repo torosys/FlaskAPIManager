@@ -88,6 +88,15 @@ def main():
     logger.info('Rendering main page for %s', session.get('username'))
     return render_template('main.html', global_params=global_params)
 
+# ─── AUTH COOKIE RETRIEVAL ─────────────────────────────────────────────────────
+
+@app.route('/auth_cookie')
+def auth_cookie():
+    if not is_logged_in():
+        return jsonify({'error': 'Not logged in'}), 401
+    cookie = http_session.cookies.get('MOCA-WS-SESSIONKEY')
+    return jsonify({'cookie': cookie})
+
 # ─── AUTHENTICATE TO EXTERNAL ENDPOINT (CAPTURE COOKIE) ─────────────────────────
 
 @app.route('/auth_toggle', methods=['POST'])
@@ -124,6 +133,7 @@ def auth_toggle():
     try:
         resp = http_session.get(auth_url)
         if resp.status_code == 200:
+            session['auth_cookie'] = http_session.cookies.get('MOCA-WS-SESSIONKEY')
             logger.info('Auth toggle succeeded for %s', usr_id)
             return jsonify({'status': 'success'})
         else:
