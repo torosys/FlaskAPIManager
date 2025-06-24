@@ -46,3 +46,8 @@ input:focus, textarea:focus, select:focus {
 .cm-dblue { color: darkblue; }
 .cm-lblue { color: #1e90ff; }
 .cm-comment { color: green; }
+
+/* Limit Live Log feed height */
+#log-section {
+    height: 20rem;
+}
